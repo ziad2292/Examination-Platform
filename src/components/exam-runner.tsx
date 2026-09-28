@@ -13,6 +13,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { saveAnswer, submitSection } from "@/app/actions/attempts";
+import { CalculatorLink } from "@/components/calculator-link";
 import {
   acknowledgePendingAnswer,
   enqueuePendingAnswer,
@@ -235,16 +236,12 @@ export function ExamRunner({
           <p className="text-xs font-bold uppercase text-black/40">{examTitle}</p>
           <h1 className="font-bold">{sectionTitle}</h1>
         </div>
-        <div
-          className={`rounded-xl px-4 py-2 font-mono text-xl font-bold tabular-nums ${
-            seconds < 300 ? "bg-red-50 text-red-700" : "bg-[#17211b] text-white"
-          }`}
-          aria-label={`${seconds} seconds remaining`}
-          aria-live="polite"
-          role="timer"
-        >
-          {formatDuration(seconds)}
-        </div>
+        <div className="flex items-center gap-2"><CalculatorLink /><div
+            className={`rounded-xl px-4 py-2 font-mono text-xl font-bold tabular-nums ${seconds < 300 ? "bg-red-50 text-red-700" : "bg-[#17211b] text-white"}`}
+            aria-label={`${seconds} seconds remaining`}
+            aria-live="polite"
+            role="timer"
+          >{formatDuration(seconds)}</div></div>
       </header>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_250px]">
