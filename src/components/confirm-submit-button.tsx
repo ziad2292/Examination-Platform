@@ -16,19 +16,21 @@ export function ConfirmSubmitButton({
   confirmation,
   requiredText,
   className = "btn-secondary",
+  disabled = false,
 }: {
   label: string;
   pendingLabel?: string;
   confirmation: string;
   requiredText?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       className={className}
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       onClick={(event) => {
         const confirmed = window.confirm(confirmation);
         const entered = confirmed && requiredText
