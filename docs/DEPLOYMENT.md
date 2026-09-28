@@ -9,6 +9,7 @@
 5. Configure Site URL and allowed redirect URLs for the Vercel domain.
 6. Run `supabase test db`, then manually verify student denial for `question_keys`, other students' attempts, and answer writes after expiry.
 7. Schedule a daily cleanup job for unreferenced `question-import-staging/` objects older than 24 hours, excluding every path referenced by `questions.image_path` or a completed import batch.
+8. Reconcile `storage_cleanup_jobs` and stale non-completed `exam_duplication_jobs`; remove an object only after confirming no question references it.
 
 ## Vercel
 

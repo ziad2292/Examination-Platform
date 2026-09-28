@@ -15,6 +15,8 @@ A production-oriented MVP for creating and taking secure, timed SAT-style mock e
 - Refresh-safe modules and breaks
 - Database-side grading with answer keys isolated in a teacher-only table
 - Teacher result list and per-question review, including unanswered items
+- Teacher exam administration with validation, archive/restore, safe deletion, duplication, rescheduling, and 15-second live monitoring
+- History-preserving attempt resets/retakes, manual submission, audited answer-key correction, and deterministic regrading
 - Reproducible migration, seed users/demo exam, pgTAP policy smoke tests, unit tests, and a k6 harness
 
 ## Local development
@@ -68,7 +70,7 @@ The authoritative flow is:
 
 `published exam → exam_attempt → ordered section_attempt → autosaved answers → submit/expire → database grading`
 
-See [engineering report](docs/ENGINEERING_REPORT.md), [bulk question import architecture](docs/BULK_QUESTION_IMPORT.md), [edge-case decisions](docs/EDGE_CASES.md), and [deployment checklist](docs/DEPLOYMENT.md).
+See [engineering report](docs/ENGINEERING_REPORT.md), [exam administration](docs/EXAM_ADMINISTRATION.md), [bulk question import architecture](docs/BULK_QUESTION_IMPORT.md), [edge-case decisions](docs/EDGE_CASES.md), and [deployment checklist](docs/DEPLOYMENT.md).
 
 ## Load test
 
@@ -83,9 +85,10 @@ Use a disposable staging project. Never run load tests against a live class.
 
 ## Known MVP limits
 
-- One attempt per student per exam; retakes require a future explicit policy.
+- Retakes require an explicit teacher grant and create a new attempt generation; self-service retakes are not supported.
 - Existing attempts may finish after the global exam close time; only new attempts are blocked.
 - Published content becomes immutable after the first attempt rather than using version snapshots.
 - Duplicate tabs converge through database upserts and revision checks; the UI does not yet elect a single active tab.
+- Live `not started` counts use all student profiles until exam-specific rosters are introduced.
 - CSV export, immediate student scores, adaptive modules, estimated SAT scores, and analytics are intentionally deferred.
 - Integration, RLS, and load tests require a running Supabase instance; unit/build checks run without credentials.
