@@ -43,6 +43,7 @@ export async function createExam(formData: FormData) {
   const parsed = examSchema.safeParse({
     title: value(formData, "title"),
     description: value(formData, "description"),
+    instructions: value(formData, "instructions"),
     accessCode: value(formData, "accessCode"),
     scheduledStartAt,
     scheduledEndAt,
@@ -55,6 +56,7 @@ export async function createExam(formData: FormData) {
     .insert({
       title: parsed.data.title,
       description: parsed.data.description || null,
+      instructions: parsed.data.instructions || null,
       access_code_required: Boolean(parsed.data.accessCode),
       scheduled_start_at: parsed.data.scheduledStartAt,
       scheduled_end_at: parsed.data.scheduledEndAt,
@@ -147,52 +149,6 @@ export async function addQuestion(formData: FormData) {
     throw new Error("Question could not be added.");
   }
   revalidatePath(`/teacher/exams/${parsed.examId}`);
-}
-
-export async function publishExam(formData: FormData) {
-  await requireRole("teacher");
-  const examId = value(formData, "examId");
-  const supabase = await assertMutable(examId);
-  const { data: sections } = await supabase
-    .from("exam_sections")
-    .select("id,section_type,questions(id)")
-    .eq("exam_id", examId);
-  if (!sections?.length) throw new Error("Add at least one section before publishing.");
-  if (
-    sections.some(
-      (section) => section.section_type === "module" && section.questions.length === 0,
-    )
-  ) {
-    throw new Error("Every module needs at least one question.");
-  }
-
-  const { error } = await supabase
-    .from("exams")
-    .update({ status: "published", published_at: new Date().toISOString() })
-    .eq("id", examId)
-    .select("id")
-    .single();
-  if (error) throw new Error("Exam could not be published.");
-  revalidatePath(`/teacher/exams/${examId}`);
-  revalidatePath("/teacher");
-}
-
-export async function changeExamStatus(formData: FormData) {
-  await requireRole("teacher");
-  const examId = value(formData, "examId");
-  const status = value(formData, "status");
-  if (!["closed", "archived"].includes(status)) throw new Error("Unsupported status");
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("exams")
-    .update({ status })
-    .eq("id", examId)
-    .select("id")
-    .single();
-  if (error) throw new Error("Exam status could not be changed.");
-  revalidatePath("/teacher");
-  revalidatePath(`/teacher/exams/${examId}`);
 }
 
 export async function moveBuilderItem(formData: FormData) {

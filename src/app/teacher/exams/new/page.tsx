@@ -35,6 +35,15 @@ export default async function NewExam({
           />
         </label>
         <label className="block">
+          <span className="label">Student instructions</span>
+          <textarea
+            className="field min-h-32"
+            name="instructions"
+            maxLength={10000}
+            placeholder="Rules, materials, and what students should expect"
+          />
+        </label>
+        <label className="block">
           <span className="label">
             Access code <span className="font-normal text-black/40">(optional)</span>
           </span>
