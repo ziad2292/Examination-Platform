@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChart3, BookOpen, CheckCircle2, ChevronDown, ChevronUp, Coffee, Plus, Radio, Trash2, XCircle } from "lucide-react";
+import { BarChart3, CheckCircle2, ChevronDown, ChevronUp, Plus, Radio, Trash2, XCircle } from "lucide-react";
 import {
   archiveExam,
   closeExam,
@@ -15,6 +15,7 @@ import {
 } from "@/app/actions/exam-administration";
 import { addQuestion, addSection, deleteQuestion, moveBuilderItem } from "@/app/actions/exams";
 import { BulkQuestionImport } from "@/components/bulk-question-import";
+import { BuilderAccordionGroup, BuilderSectionAccordion } from "@/components/builder-section-accordion";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ExamScheduleFields } from "@/components/exam-schedule-fields";
 import { requireRole } from "@/lib/auth";
@@ -104,9 +105,9 @@ export default async function ExamEditor({
           </form>
         </details>
 
-        {sections.map((section) => <section className="card overflow-hidden" key={section.id}>
-          <header className="flex flex-wrap items-center gap-4 border-b border-black/10 bg-black/[.02] p-5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green-50 text-brand">{section.section_type === "module" ? <BookOpen size={19} /> : <Coffee size={19} />}</span><div className="min-w-40 flex-1"><p className="text-xs font-bold uppercase text-black/40">{section.section_type} {section.section_order}</p><h2 className="font-bold">{section.title}</h2></div><span className="text-sm font-semibold text-black/50">{section.duration_seconds / 60} min</span>{contentEditable && <MoveButtons examId={examId} kind="section" id={section.id} />}</header>
-          {section.section_type === "break" ? <p className="p-5 text-sm text-black/50">Timed break. No questions attached.</p> : <div className="p-5">
+        {sections.length > 0 && <BuilderAccordionGroup initialSectionId={sections[0].id}>{sections.map((section) => <BuilderSectionAccordion key={section.id} id={section.id} title={section.title} type={section.section_type} order={section.section_order} durationMinutes={section.duration_seconds / 60} questionCount={section.questions.length}>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-black/50">{section.section_type === "module" ? "Manage questions, answer keys, images, and ordering." : "Timed break with no questions attached."}</p>{contentEditable && <MoveButtons examId={examId} kind="section" id={section.id} />}</div>
+          {section.section_type === "break" ? <p className="rounded-xl bg-black/[.025] p-4 text-sm text-black/50">Students will see a dedicated break timer and continue when it expires.</p> : <div>
             <div className="space-y-3">{section.questions.map((question) => {
               const key = Array.isArray(question.question_keys) ? question.question_keys[0] : question.question_keys;
               return <article className="rounded-xl border border-black/10 p-4" key={question.id}>
@@ -118,7 +119,7 @@ export default async function ExamEditor({
             })}</div>
             {contentEditable && <><BulkQuestionImport examId={examId} sectionId={section.id} userId={viewer.id} /><details className="mt-5 rounded-xl border border-dashed border-black/20 p-4"><summary className="cursor-pointer rounded-lg py-1 font-semibold text-brand">Add one question manually</summary><form action={addQuestion} className="stack-form mt-6"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="sectionId" value={section.id} /><label><span className="label">Question text</span><textarea className="field min-h-24" name="text" /></label><label><span className="label">Question image <span className="font-normal text-black/40">(optional)</span></span><input className="field" name="image" type="file" accept="image/png,image/jpeg,image/webp" /></label><div className="grid gap-4 sm:grid-cols-2">{["A", "B", "C", "D"].map((letter) => <label key={letter}><span className="label">Option {letter}</span><input className="field" name={`option${letter}`} required /></label>)}</div><label><span className="label">Correct option</span><select className="field" name="correctOption">{["A", "B", "C", "D"].map((letter) => <option key={letter}>{letter}</option>)}</select></label><button className="btn-primary w-full sm:w-auto"><Plus size={17} />Add question</button></form></details></>}
           </div>}
-        </section>)}
+        </BuilderSectionAccordion>)}</BuilderAccordionGroup>}
         {!sections.length && <div className="card p-10 text-center text-black/45">Add your first section to begin building the exam.</div>}
       </div>
 
