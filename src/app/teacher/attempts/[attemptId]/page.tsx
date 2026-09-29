@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { authorizeRetake, correctAnswerKey, resetAttempt, teacherSubmitAttempt, teacherSubmitSection } from "@/app/actions/exam-administration";
+import { authorizeRetake, resetAttempt, teacherSubmitAttempt, teacherSubmitSection } from "@/app/actions/exam-administration";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { requireRole } from "@/lib/auth";
 import { formatAppDateTime } from "@/lib/date-time";
@@ -60,7 +60,6 @@ export default async function AttemptDetail({
           const key = Array.isArray(question.question_keys) ? question.question_keys[0] : question.question_keys;
           return <article className="card p-5" key={question.id}>
             <div className="flex flex-wrap items-center gap-4"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase text-black/40">{question.exam_sections.title} · Question {question.question_order}</p><p className="mt-1 truncate font-medium">{question.optional_text || "Image-based question"}</p></div><span className="text-sm">Selected: <b>{answer?.selected_option ?? "Unanswered"}</b></span><span className="text-sm">Correct: <b>{key?.correct_option}</b></span>{answer?.marked_for_review && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-bold">Marked</span>}<span className={`rounded-full px-3 py-1 text-xs font-bold ${result?.is_correct ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"}`}>{result?.is_correct ? "Correct" : answer?.selected_option ? "Incorrect" : "Unanswered"}</span></div>
-            <details className="mt-4 rounded-xl border border-dashed border-black/15 p-4"><summary className="cursor-pointer text-sm font-semibold text-brand">Correct answer key and regrade</summary><form action={correctAnswerKey} className="stack-form mt-4"><input type="hidden" name="attemptId" value={attemptId} /><input type="hidden" name="examId" value={exam.id} /><input type="hidden" name="questionId" value={question.id} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><label><span className="label">Corrected option</span><select className="field" name="correctedOption" defaultValue={key?.correct_option}>{["A", "B", "C", "D"].map((option) => <option key={option}>{option}</option>)}</select></label><label><span className="label">Correction reason</span><input className="field" name="reason" minLength={3} maxLength={1000} required placeholder="Explain the answer-key error" /></label><ConfirmSubmitButton className="btn-danger" label="Correct key and regrade" confirmation={`Correct the answer key for question ${question.question_order}? Every terminal attempt for this exam will be deterministically regraded and the old key will remain in audit history.`} /></form></details>
           </article>;
         })}
       </div>

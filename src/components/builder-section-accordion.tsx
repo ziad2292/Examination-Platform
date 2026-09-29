@@ -3,15 +3,15 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 import { BookOpen, CheckCircle2, Coffee } from "lucide-react";
 
-const BuilderAccordionContext = createContext<{ activeId: string; setActiveId: (id: string) => void } | null>(null);
+const BuilderAccordionContext = createContext<{ activeId: string | null; setActiveId: (id: string | null) => void } | null>(null);
 
-export function nextActiveSection(currentId: string, selectedId: string) {
-  return currentId === selectedId ? currentId : selectedId;
+export function nextActiveSection(currentId: string | null, selectedId: string) {
+  return currentId === selectedId ? null : selectedId;
 }
 
 export function BuilderAccordionGroup({ initialSectionId, children }: { initialSectionId: string; children: ReactNode }) {
-  const [activeId, setActive] = useState(initialSectionId);
-  return <BuilderAccordionContext.Provider value={{ activeId, setActiveId: (id) => setActive((current) => nextActiveSection(current, id)) }}><div className="space-y-4">{children}</div></BuilderAccordionContext.Provider>;
+  const [activeId, setActive] = useState<string | null>(initialSectionId);
+  return <BuilderAccordionContext.Provider value={{ activeId, setActiveId: (id) => setActive((current) => id === null ? null : nextActiveSection(current, id)) }}><div><div className="mb-3 flex justify-end"><button className="btn-ghost !min-h-9 text-sm" type="button" disabled={activeId === null} onClick={() => setActive(null)}>Minimize all sections</button></div><div className="space-y-4">{children}</div></div></BuilderAccordionContext.Provider>;
 }
 
 export function BuilderSectionAccordion({

@@ -6,29 +6,13 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { localDateTimeToIso } from "@/lib/exam-state";
 import { examSchema, questionSchema, sectionSchema } from "@/lib/validation";
+import type { FormActionState } from "@/lib/form-state";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
-async function assertMutable(examId: string) {
-  const supabase = await createClient();
-  const { data: exam } = await supabase
-    .from("exams")
-    .select("id")
-    .eq("id", examId)
-    .single();
-  if (!exam) throw new Error("Exam not found.");
-
-  const { count } = await supabase
-    .from("exam_attempts")
-    .select("id", { count: "exact", head: true })
-    .eq("exam_id", examId);
-  if (count) throw new Error("Exam content is locked because a student has started it.");
-  return supabase;
-}
-
-export async function createExam(formData: FormData) {
+export async function createExam(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
   const viewer = await requireRole("teacher");
   const startOffsetValue = value(formData, "scheduledStartOffset");
   const endOffsetValue = value(formData, "scheduledEndOffset");
@@ -48,7 +32,7 @@ export async function createExam(formData: FormData) {
     scheduledStartAt,
     scheduledEndAt,
   });
-  if (!parsed.success) redirect("/teacher/exams/new?error=invalid_details");
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the exam details and schedule." };
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -64,7 +48,7 @@ export async function createExam(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error) redirect("/teacher/exams/new?error=create_failed");
+  if (error) return { ok: false, message: "The exam could not be created. Check the schedule and try again." };
 
   if (parsed.data.accessCode) {
     const codeResult = await supabase.from("exam_access_codes").insert({
@@ -73,35 +57,42 @@ export async function createExam(formData: FormData) {
     });
     if (codeResult.error) {
       await supabase.from("exams").delete().eq("id", data.id);
-      redirect("/teacher/exams/new?error=create_failed");
+      return { ok: false, message: "The access code could not be saved. No partial exam was retained." };
     }
   }
 
   redirect(`/teacher/exams/${data.id}`);
 }
 
-export async function addSection(formData: FormData) {
+export async function addSection(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
   await requireRole("teacher");
-  const parsed = sectionSchema.parse({
+  const parsed = sectionSchema.safeParse({
     examId: value(formData, "examId"),
     title: value(formData, "title"),
     sectionType: value(formData, "sectionType"),
     durationSeconds: Number(formData.get("durationMinutes")) * 60,
   });
-  const supabase = await assertMutable(parsed.examId);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the section details." };
+  const supabase = await createClient();
   const { error } = await supabase.rpc("create_section", {
-    target_exam: parsed.examId,
-    new_title: parsed.title,
-    new_type: parsed.sectionType,
-    new_duration_seconds: parsed.durationSeconds,
+    target_exam: parsed.data.examId,
+    new_title: parsed.data.title,
+    new_type: parsed.data.sectionType,
+    new_duration_seconds: parsed.data.durationSeconds,
   });
-  if (error) throw new Error("Section could not be added.");
-  revalidatePath(`/teacher/exams/${parsed.examId}`);
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("locked")) return { ok: false, message: "Sections can only be added before students begin the exam." };
+    if (message.includes("not found")) return { ok: false, message: "This exam is unavailable or you no longer have access to it." };
+    return { ok: false, message: "The section could not be added. Check its name and duration." };
+  }
+  revalidatePath(`/teacher/exams/${parsed.data.examId}`);
+  return { ok: true, message: "Section added." };
 }
 
-export async function addQuestion(formData: FormData) {
+export async function addQuestion(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
   await requireRole("teacher");
-  const parsed = questionSchema.parse({
+  const parsed = questionSchema.safeParse({
     examId: value(formData, "examId"),
     sectionId: value(formData, "sectionId"),
     text: value(formData, "text"),
@@ -111,7 +102,12 @@ export async function addQuestion(formData: FormData) {
     optionD: value(formData, "optionD"),
     correctOption: value(formData, "correctOption"),
   });
-  const supabase = await assertMutable(parsed.examId);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the question and answer choices." };
+  const supabase = await createClient();
+  const { data: exam } = await supabase.from("exams").select("id").eq("id", parsed.data.examId).maybeSingle();
+  if (!exam) return { ok: false, message: "This exam is unavailable or you no longer have access to it." };
+  const { count } = await supabase.from("exam_attempts").select("id", { count: "exact", head: true }).eq("exam_id", parsed.data.examId);
+  if (count) return { ok: false, message: "Questions can only be added before students begin the exam." };
   let imagePath: string | null = null;
   const image = formData.get("image");
 
@@ -122,33 +118,34 @@ export async function addQuestion(formData: FormData) {
       "image/webp": "webp",
     };
     const extension = extensions[image.type];
-    if (!extension) throw new Error("Use a PNG, JPEG, or WebP image.");
-    if (image.size > 8 * 1024 * 1024) throw new Error("Image must be under 8 MB.");
+    if (!extension) return { ok: false, message: "Use a PNG, JPEG, or WebP image." };
+    if (image.size > 8 * 1024 * 1024) return { ok: false, message: "The question image must be under 8 MB." };
 
-    imagePath = `${parsed.examId}/${crypto.randomUUID()}.${extension}`;
+    imagePath = `${parsed.data.examId}/${crypto.randomUUID()}.${extension}`;
     const upload = await supabase.storage
       .from("question-images")
       .upload(imagePath, image, { contentType: image.type, upsert: false });
-    if (upload.error) throw new Error("Image could not be uploaded.");
+    if (upload.error) return { ok: false, message: "The image could not be uploaded. Try again." };
   }
 
   const { error } = await supabase.rpc("create_question", {
-    target_exam: parsed.examId,
-    target_section: parsed.sectionId,
-    question_text: parsed.text || null,
-    answer_a: parsed.optionA,
-    answer_b: parsed.optionB,
-    answer_c: parsed.optionC,
-    answer_d: parsed.optionD,
-    correct: parsed.correctOption,
+    target_exam: parsed.data.examId,
+    target_section: parsed.data.sectionId,
+    question_text: parsed.data.text || null,
+    answer_a: parsed.data.optionA,
+    answer_b: parsed.data.optionB,
+    answer_c: parsed.data.optionC,
+    answer_d: parsed.data.optionD,
+    correct: parsed.data.correctOption,
     stored_image_path: imagePath,
   });
 
   if (error) {
     if (imagePath) await supabase.storage.from("question-images").remove([imagePath]);
-    throw new Error("Question could not be added.");
+    return { ok: false, message: error.message.toLowerCase().includes("locked") ? "Questions can only be added before students begin the exam." : "The question could not be added. Check its content and try again." };
   }
-  revalidatePath(`/teacher/exams/${parsed.examId}`);
+  revalidatePath(`/teacher/exams/${parsed.data.examId}`);
+  return { ok: true, message: "Question added." };
 }
 
 export async function moveBuilderItem(formData: FormData) {

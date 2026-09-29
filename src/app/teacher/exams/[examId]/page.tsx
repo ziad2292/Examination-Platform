@@ -1,23 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChart3, CheckCircle2, ChevronDown, ChevronUp, Plus, Radio, Trash2, XCircle } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronUp, Radio, Trash2 } from "lucide-react";
 import {
-  archiveExam,
-  closeExam,
-  deleteExam,
-  duplicateExam,
-  publishExamAdmin,
   replaceQuestionImage,
-  rescheduleExam,
-  restoreExam,
   updateExamMetadata,
 } from "@/app/actions/exam-administration";
-import { addQuestion, addSection, deleteQuestion, moveBuilderItem } from "@/app/actions/exams";
+import { deleteQuestion, moveBuilderItem } from "@/app/actions/exams";
 import { BulkQuestionImport } from "@/components/bulk-question-import";
 import { BuilderAccordionGroup, BuilderSectionAccordion } from "@/components/builder-section-accordion";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { ExamManagementActions } from "@/components/exam-management-actions";
 import { ExamScheduleFields } from "@/components/exam-schedule-fields";
+import { ManualQuestionForm } from "@/components/manual-question-form";
 import { requireRole } from "@/lib/auth";
 import { formatAppDateTime } from "@/lib/date-time";
 import { createClient } from "@/lib/supabase/server";
@@ -77,7 +72,30 @@ export default async function ExamEditor({
   const imageUrls = new Map((signedImages.data ?? []).map((image) => [image.path, image.signedUrl]));
   sections.forEach((section) => section.questions.forEach((question) => { if (question.image_path) question.image_url = imageUrls.get(question.image_path) ?? undefined; }));
   const auditEvents = (auditData ?? []) as unknown as AuditEvent[];
-  const duplicateId = crypto.randomUUID();
+  // Server-rendered availability is intentionally evaluated at request time.
+  // eslint-disable-next-line react-hooks/purity
+  const requestTime = Date.now();
+  const currentlyRunning = exam.status === "published" && requestTime >= new Date(exam.scheduled_start_at).getTime() && requestTime < new Date(exam.scheduled_end_at).getTime();
+  const canDelete = activeAttempts === 0 && (exam.status === "closed" || (exam.status === "draft" && attempts === 0));
+  const deleteBlockedReason = activeAttempts > 0 || currentlyRunning || exam.status === "published"
+    ? "Permanent deletion is unavailable while an exam is published or has an active attempt. Close the exam first."
+    : exam.status === "archived"
+      ? "Restore this exam to a closed state before permanently deleting it."
+      : attempts > 0 && exam.status !== "closed"
+        ? "Close this exam before permanently deleting its historical results."
+        : null;
+  const messages: Record<string, string> = {
+    invalid_details: "Check the exam details and schedule.",
+    update_failed: "Those details could not be saved. Reload if this exam changed in another tab.",
+    publish_not_ready: "Complete the publish-readiness items before publishing.",
+    publish_failed: "The exam could not be published in its current state.",
+    close_failed: "Only a published exam can be closed.",
+    archive_failed: "Finish or administer active attempts before archiving this exam.",
+    delete_active: "An exam cannot be deleted while its testing window is active.",
+    delete_close_first: "Close the exam before permanently deleting it and its historical results.",
+    delete_confirmation: "The exam title did not match, so nothing was deleted.",
+    delete_failed: "The exam could not be deleted safely.",
+  };
 
   return <div>
     <div className="flex flex-wrap items-start justify-between gap-5">
@@ -85,12 +103,14 @@ export default async function ExamEditor({
       <div className="flex flex-wrap gap-2"><Link className="btn-secondary" href={`/teacher/exams/${examId}/monitor`}><Radio size={17} />Monitor</Link><Link className="btn-secondary" href={`/teacher/exams/${examId}/results`}><BarChart3 size={17} />Results</Link></div>
     </div>
 
-    {feedback.notice && <p role="status" className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">The requested exam operation completed successfully.</p>}
-    {feedback.error && <p role="alert" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">The operation could not be completed. The exam may have changed in another session or its lifecycle rules may prevent this action.</p>}
+    {feedback.notice && <p role="status" className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">Exam updated successfully.</p>}
+    {feedback.error && <p role="alert" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{messages[feedback.error] ?? "That action is not available for the exam’s current state."}</p>}
     {attempts > 0 && <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium">Question content is locked because {attempts} historical attempt{attempts === 1 ? " exists" : "s exist"}. Descriptive metadata remains editable; opening time and shorter closing windows are prohibited.</div>}
     {exam.status === "archived" && <div className="mt-6 rounded-xl border border-black/10 bg-white p-4 text-sm font-medium">This archived exam is read-only. Restore it deliberately before making changes.</div>}
 
-    <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_360px]">
+    <ExamManagementActions exam={exam} attempts={attempts} activeAttempts={activeAttempts} validation={validation} contentEditable={contentEditable} canDelete={canDelete} deleteBlockedReason={deleteBlockedReason} />
+
+    <div className="mt-6 grid gap-6">
       <div className="space-y-6">
         <details className="card p-5" open>
           <summary className="cursor-pointer text-lg font-bold">Exam details and instructions</summary>
@@ -117,37 +137,13 @@ export default async function ExamEditor({
                 {contentEditable && <form action={replaceQuestionImage} className="mt-4 rounded-xl border border-dashed border-black/15 p-4"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="questionId" value={question.id} /><input type="hidden" name="expectedOldPath" value={question.image_path ?? ""} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><label><span className="label">Replace question image</span><input className="field" name="image" type="file" accept="image/png,image/jpeg,image/webp" required /></label><input className="field mt-3" name="reason" placeholder="Reason for replacement" maxLength={1000} /><ConfirmSubmitButton className="btn-secondary mt-4" label="Replace image" confirmation={`Replace the image for question ${question.question_order}? The old object will be deleted only after the database update succeeds.`} /></form>}
               </article>;
             })}</div>
-            {contentEditable && <><BulkQuestionImport examId={examId} sectionId={section.id} userId={viewer.id} /><details className="mt-5 rounded-xl border border-dashed border-black/20 p-4"><summary className="cursor-pointer rounded-lg py-1 font-semibold text-brand">Add one question manually</summary><form action={addQuestion} className="stack-form mt-6"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="sectionId" value={section.id} /><label><span className="label">Question text</span><textarea className="field min-h-24" name="text" /></label><label><span className="label">Question image <span className="font-normal text-black/40">(optional)</span></span><input className="field" name="image" type="file" accept="image/png,image/jpeg,image/webp" /></label><div className="grid gap-4 sm:grid-cols-2">{["A", "B", "C", "D"].map((letter) => <label key={letter}><span className="label">Option {letter}</span><input className="field" name={`option${letter}`} required /></label>)}</div><label><span className="label">Correct option</span><select className="field" name="correctOption">{["A", "B", "C", "D"].map((letter) => <option key={letter}>{letter}</option>)}</select></label><button className="btn-primary w-full sm:w-auto"><Plus size={17} />Add question</button></form></details></>}
+            {contentEditable && <><BulkQuestionImport examId={examId} sectionId={section.id} userId={viewer.id} /><details className="mt-5 rounded-xl border border-dashed border-black/20 p-4"><summary className="cursor-pointer rounded-lg py-1 font-semibold text-brand">Add one question manually</summary><ManualQuestionForm examId={examId} sectionId={section.id} /></details></>}
           </div>}
         </BuilderSectionAccordion>)}</BuilderAccordionGroup>}
         {!sections.length && <div className="card p-10 text-center text-black/45">Add your first section to begin building the exam.</div>}
       </div>
 
       <aside className="space-y-5">
-        <section className="card p-5">
-          <h2 className="font-bold">Publish readiness</h2>
-          <div className="mt-4 space-y-2 text-sm">
-            {[`${validation?.modules ?? 0} modules configured`, `${validation?.breaks ?? 0} breaks configured`, `${validation?.questions ?? 0} questions`, `${validation?.answerKeys ?? 0} answer keys configured`, "Schedule valid"].map((item, index) => {
-              const pass = index < 4 ? [validation?.modules, true, validation?.questions, validation?.answerKeys][index] : validation?.scheduleValid;
-              return <p className="flex items-center gap-2" key={item}>{pass ? <CheckCircle2 className="text-brand" size={16} /> : <XCircle className="text-red-600" size={16} />}{item}</p>;
-            })}
-          </div>
-          {validation?.errors?.length ? <ul className="mt-4 space-y-1 text-sm text-red-700">{validation.errors.map((error) => <li key={error}>✕ {error}</li>)}</ul> : <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm font-bold text-brand">Ready to publish</p>}
-          {exam.status === "draft" && <form action={publishExamAdmin} className="mt-5"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><button className="btn-primary w-full" disabled={!validation?.ready}><CheckCircle2 size={17} />Publish</button></form>}
-          {exam.status === "published" && <form action={closeExam} className="mt-5"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Closed from exam administration" /><ConfirmSubmitButton className="btn-secondary w-full" label="Close exam" confirmation={`Close “${exam.title}”? No new students can start, but active section timers and submissions will continue safely.`} /></form>}
-        </section>
-
-        {metadataEditable && <section className="card p-5"><h2 className="font-bold">Reschedule{exam.status === "closed" ? " or reopen" : ""}</h2><p className="mt-2 text-sm leading-6 text-black/50">{attempts > 0 ? "Opening time is frozen. You may only extend the closing time; active section expiries stay unchanged." : "Before attempts exist, both schedule boundaries may be changed."}</p><form action={rescheduleExam} className="stack-form mt-5"><input type="hidden" name="examId" value={examId} /><input type="hidden" name="expectedUpdatedAt" value={exam.updated_at} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reopen" value={exam.status === "closed" ? "true" : "false"} /><ExamScheduleFields startAt={exam.scheduled_start_at} endAt={exam.scheduled_end_at} lockStart={attempts > 0} /><label><span className="label">Reason</span><input className="field" name="reason" minLength={3} maxLength={1000} required placeholder="Operational reason" /></label><ConfirmSubmitButton className="btn-secondary w-full" label={exam.status === "closed" ? "Reopen with this schedule" : "Apply schedule"} confirmation={attempts > 0 ? `Extend the schedule for “${exam.title}”? Existing section expiry timestamps will not change.` : `Apply this new schedule to “${exam.title}”?`} /></form></section>}
-
-        {contentEditable && <section className="card p-5"><h2 className="font-bold">Add section</h2><form action={addSection} className="stack-form mt-5"><input type="hidden" name="examId" value={examId} /><label><span className="label">Title</span><input className="field" name="title" required /></label><label><span className="label">Type</span><select className="field" name="sectionType"><option value="module">Module</option><option value="break">Break</option></select></label><label><span className="label">Duration (minutes)</span><input className="field" name="durationMinutes" type="number" min="1" max="240" required defaultValue="32" /></label><button className="btn-primary w-full"><Plus size={17} />Add section</button></form></section>}
-
-        <section className="card p-5"><h2 className="font-bold">Lifecycle actions</h2><div className="mt-4 space-y-3">
-          <form action={duplicateExam}><input type="hidden" name="examId" value={examId} /><input type="hidden" name="targetExamId" value={duplicateId} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="newTitle" value={`${exam.title} (Copy)`} /><ConfirmSubmitButton className="btn-secondary w-full" label="Duplicate as draft" pendingLabel="Duplicating…" confirmation={`Duplicate “${exam.title}”? Structure, durations, questions, images, and keys will be copied; attempts and the original schedule will not.`} /></form>
-          {exam.status === "archived" ? <form action={restoreExam}><input type="hidden" name="examId" value={examId} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Restored from exam administration" /><ConfirmSubmitButton className="btn-secondary w-full" label="Restore exam" confirmation={`Restore “${exam.title}”? It will return as ${attempts ? "closed" : "a draft"}.`} /></form> : activeAttempts === 0 && <form action={archiveExam}><input type="hidden" name="examId" value={examId} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Archived from exam administration" /><ConfirmSubmitButton className="btn-secondary w-full" label="Archive exam" confirmation={`Archive “${exam.title}”? It will become read-only and disappear from active lists; attempts and results remain intact.`} /></form>}
-          {exam.status === "draft" && attempts === 0 && <form action={deleteExam}><input type="hidden" name="examId" value={examId} /><input type="hidden" name="confirmationTitle" value={exam.title} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Permanently deleted untouched draft" /><ConfirmSubmitButton className="btn-danger w-full" label="Delete untouched draft" requiredText={exam.title} confirmation={`Permanently delete “${exam.title}”? Database content will be removed transactionally and images queued for safe cleanup.`} /></form>}
-          {activeAttempts > 0 && <p className="text-xs leading-5 text-amber-700">Archive is unavailable while {activeAttempts} attempt{activeAttempts === 1 ? " is" : "s are"} active.</p>}
-        </div></section>
-
         <section className="card p-5"><h2 className="font-bold">Recent administrative activity</h2>{auditEvents.length ? <ol className="mt-4 space-y-4">{auditEvents.map((event) => { const actor = Array.isArray(event.profiles) ? event.profiles[0] : event.profiles; return <li className="border-l-2 border-brand/25 pl-3 text-sm" key={event.id}><p className="font-semibold">{event.action.replaceAll(".", " ")}</p><p className="text-black/45">{actor?.full_name ?? "Teacher"} · {formatAppDateTime(event.created_at)}</p>{event.reason && <p className="mt-1 text-black/55">{event.reason}</p>}</li>; })}</ol> : <p className="mt-3 text-sm text-black/45">No administrative changes recorded yet.</p>}</section>
       </aside>
     </div>
