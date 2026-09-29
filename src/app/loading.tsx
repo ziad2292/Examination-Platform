@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="shell grid min-h-[60vh] place-items-center py-16" aria-live="polite"><div className="text-center"><span className="mx-auto block size-9 animate-spin rounded-full border-4 border-black/10 border-t-brand"/><p className="mt-4 text-sm font-semibold text-black/50">Loading…</p></div></main>}

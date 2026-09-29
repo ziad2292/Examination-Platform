@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { SearchX } from "lucide-react";
+export default function NotFound(){return <main className="shell grid min-h-[70vh] place-items-center py-16"><section className="card w-full max-w-lg p-8 text-center sm:p-10"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-50 text-amber-700"><SearchX size={27}/></span><p className="eyebrow mt-6">Page not found</p><h1 className="mt-2 text-3xl font-bold">This page isn’t available</h1><p className="mt-4 leading-7 text-black/55">The link may be outdated, or you may not have access to this page.</p><Link className="btn-primary mt-8" href="/dashboard">Go to dashboard</Link></section></main>}

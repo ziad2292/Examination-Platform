@@ -1,0 +1,4 @@
+"use server";
+import { redirect } from "next/navigation"; import { createClient } from "@/lib/supabase/server";
+export async function signIn(formData:FormData){const email=String(formData.get("email")??"").trim(),password=String(formData.get("password")??""),next=String(formData.get("next")??"");const supabase=await createClient();const {error}=await supabase.auth.signInWithPassword({email,password});if(error){console.error("Sign-in failed",{code:error.code,status:error.status});const reason=error.code==="invalid_credentials"?"invalid_credentials":"service_unavailable";redirect(`/login?error=${reason}&next=${encodeURIComponent(next)}`)}redirect(next.startsWith("/")&&!next.startsWith("//")?next:"/dashboard");}
+export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();redirect("/");}

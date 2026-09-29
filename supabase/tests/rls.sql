@@ -1,0 +1,16 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(10);
+select has_table('public','question_keys','answer keys are separated');
+select ok((select relrowsecurity from pg_class where oid='public.question_keys'::regclass),'question keys enforce RLS');
+select ok((select relrowsecurity from pg_class where oid='public.exam_attempts'::regclass),'attempts enforce RLS');
+select ok((select relrowsecurity from pg_class where oid='public.answers'::regclass),'answers enforce RLS');
+select has_function('public','start_exam',array['uuid','text']);
+select has_function('public','start_section',array['uuid','uuid']);
+select has_function('public','save_answer',array['uuid','uuid','answer_option','boolean','integer']);
+select has_function('public','submit_section',array['uuid']);
+select is((select public from storage.buckets where id='question-images'),false,'question image bucket is private');
+select ok(exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='question_images_authorized_read'),'question images require an authorization policy');
+select * from finish();
+rollback;
