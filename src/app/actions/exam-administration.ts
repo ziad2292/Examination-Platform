@@ -5,10 +5,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth";
 import { localDateTimeToIso } from "@/lib/exam-state";
+import type { FormActionState } from "@/lib/form-state";
 import { createClient } from "@/lib/supabase/server";
 
 const idSchema = z.guid();
 const optionSchema = z.enum(["A", "B", "C", "D"]);
+const databaseTimestampSchema = z.string().refine((timestamp) => Number.isFinite(Date.parse(timestamp)), "Invalid timestamp");
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -20,7 +22,7 @@ function operationKey(formData: FormData) {
 }
 
 function scheduleValue(formData: FormData, field: string) {
-  const offset = Number(value(formData, `${field}Offset`));
+  const offset = Number(value(formData, `${field.replace(/At$/, "")}Offset`));
   return localDateTimeToIso(value(formData, field), offset);
 }
 
@@ -43,7 +45,7 @@ export async function updateExamMetadata(formData: FormData) {
       instructions: z.string().max(10000),
       scheduledStartAt: z.string().datetime(),
       scheduledEndAt: z.string().datetime(),
-      expectedUpdatedAt: z.string().datetime(),
+      expectedUpdatedAt: databaseTimestampSchema,
       reason: z.string().max(1000),
       operationKey: idSchema,
     })
@@ -84,16 +86,16 @@ export async function updateExamMetadata(formData: FormData) {
   redirect(`/teacher/exams/${parsed.data.examId}?notice=details_updated`);
 }
 
-export async function rescheduleExam(formData: FormData) {
+export async function rescheduleExam(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
   await requireRole("teacher");
-  const examId = idSchema.parse(value(formData, "examId"));
+  const parsedExamId = idSchema.safeParse(value(formData, "examId"));
+  if (!parsedExamId.success) return { ok: false, message: "This exam could not be identified." };
+  const examId = parsedExamId.data;
   const start = scheduleValue(formData, "scheduledStartAt");
   const end = scheduleValue(formData, "scheduledEndAt");
-  const expected = z.string().datetime().safeParse(value(formData, "expectedUpdatedAt"));
+  const expected = databaseTimestampSchema.safeParse(value(formData, "expectedUpdatedAt"));
   const reason = value(formData, "reason");
-  if (!start || !end || new Date(end) <= new Date(start) || !expected.success || reason.length < 3) {
-    redirect(adminErrorPath(examId, "invalid_reschedule"));
-  }
+  if (!start || !end || new Date(end) <= new Date(start) || !expected.success) return { ok: false, message: "Choose a closing time after the opening time." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("reschedule_exam", {
     target_exam: examId,
@@ -106,11 +108,18 @@ export async function rescheduleExam(formData: FormData) {
   });
   if (error) {
     console.error("Exam reschedule failed", { code: error.code });
-    redirect(adminErrorPath(examId, "reschedule_failed"));
+    const messages = [
+      ["changed in another session", "This exam changed in another tab. Reload the page before rescheduling."],
+      ["cannot be shortened", "The closing time cannot be shortened after a student has started."],
+      ["must be in the future", "Choose a closing time in the future."],
+      ["archived", "Restore the exam before changing its schedule."],
+      ["Only a closed exam", "Only a closed exam can be reopened."],
+    ] as const;
+    return { ok: false, message: messages.find(([fragment]) => error.message.includes(fragment))?.[1] ?? "The schedule could not be changed. Review the dates and try again." };
   }
   revalidatePath("/teacher");
   revalidatePath(`/teacher/exams/${examId}`);
-  redirect(`/teacher/exams/${examId}?notice=rescheduled`);
+  return { ok: true, message: value(formData, "reopen") === "true" ? "The exam was reopened with the new schedule." : "The schedule was updated." };
 }
 
 export async function publishExamAdmin(formData: FormData) {
@@ -123,7 +132,7 @@ export async function publishExamAdmin(formData: FormData) {
   });
   if (error) {
     console.error("Exam publish failed", { code: error.code });
-    redirect(adminErrorPath(examId, "publish_validation_failed"));
+    redirect(adminErrorPath(examId, error.message.includes("ready to publish") ? "publish_not_ready" : "publish_failed"));
   }
   revalidatePath("/teacher");
   revalidatePath(`/teacher/exams/${examId}`);
@@ -189,7 +198,8 @@ export async function deleteExam(formData: FormData) {
   });
   if (error) {
     console.error("Exam deletion failed", { code: error.code });
-    redirect(adminErrorPath(examId, "delete_failed"));
+    const code = error.message.includes("active exam") ? "delete_active" : error.message.includes("attempts") ? "delete_history" : error.message.includes("confirmation") ? "delete_confirmation" : "delete_failed";
+    redirect(adminErrorPath(examId, code));
   }
   const paths = (data ?? []) as string[];
   if (paths.length) {
@@ -207,7 +217,8 @@ export async function deleteExam(formData: FormData) {
 export async function duplicateExam(formData: FormData) {
   await requireRole("teacher");
   const sourceExamId = idSchema.parse(value(formData, "examId"));
-  const targetExamId = idSchema.parse(value(formData, "targetExamId"));
+  const parsedTargetId = idSchema.safeParse(value(formData, "targetExamId"));
+  const targetExamId = parsedTargetId.success ? parsedTargetId.data : crypto.randomUUID();
   const key = operationKey(formData);
   const newTitle = value(formData, "newTitle");
   const supabase = await createClient();
@@ -354,13 +365,12 @@ export async function teacherSubmitSection(formData: FormData) {
 
 export async function correctAnswerKey(formData: FormData) {
   await requireRole("teacher");
-  const attemptId = idSchema.parse(value(formData, "attemptId"));
   const examId = idSchema.parse(value(formData, "examId"));
   const questionId = idSchema.parse(value(formData, "questionId"));
   const corrected = optionSchema.safeParse(value(formData, "correctedOption"));
   const reason = value(formData, "reason");
   if (!corrected.success || reason.length < 3) {
-    redirect(`/teacher/attempts/${attemptId}?error=invalid_correction`);
+    redirect(`/teacher/exams/${examId}/results?error=invalid_correction`);
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("correct_answer_key", {
@@ -371,9 +381,8 @@ export async function correctAnswerKey(formData: FormData) {
   });
   if (error) {
     console.error("Answer-key correction failed", { code: error.code });
-    redirect(`/teacher/attempts/${attemptId}?error=correction_failed`);
+    redirect(`/teacher/exams/${examId}/results?error=correction_failed`);
   }
-  revalidatePath(`/teacher/attempts/${attemptId}`);
   revalidatePath(`/teacher/exams/${examId}/results`);
-  redirect(`/teacher/attempts/${attemptId}?notice=regraded`);
+  redirect(`/teacher/exams/${examId}/results?notice=regraded`);
 }
