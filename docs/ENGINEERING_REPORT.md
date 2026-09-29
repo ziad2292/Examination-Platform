@@ -10,6 +10,8 @@ All primary keys are UUIDs. `profiles` maps one-to-one to Supabase Auth. Exams c
 
 RLS is enabled on every application table. Teachers can mutate only their exams. Students can read published exam content and only their attempt records. No direct insert/update policy exists for student attempts or answers: security-definer functions validate identity, ordering, expiry, and ownership. Service-role credentials are never used by browser code.
 
+Super Admin user management is isolated from teacher exam administration. Route guards, Server Actions, RLS, and database RPCs all verify the distinct active `superadmin` role. Auth creation, email changes, bans, and eligible deletion use a server-only service-role client; profile lifecycle constraints and audit records remain database-enforced.
+
 ## Timing and reliability
 
 Starting a section atomically stores `started_at` and `expires_at`. The browser renders `expires_at - now`; it does not own elapsed time. Every answer save checks the database clock and rejects expired/closed sections. Submission is idempotent. Refreshing reloads saved answers and the original expiry. A failed save is retained in `localStorage` and retried when connectivity returns.

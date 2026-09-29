@@ -5,6 +5,7 @@ A production-oriented MVP for creating and taking secure, timed SAT-style mock e
 ## What is implemented
 
 - Teacher and student authentication/route guards
+- Dedicated Super Admin authorization and audited teacher/student account management
 - Exam scheduling, draft/publish/close/archive states
 - Ordered timed modules and breaks
 - Four-option questions with optional Supabase Storage images
@@ -35,10 +36,12 @@ Copy `.env.example` to `.env.local`, then copy the local API URL and anon key pr
 npm run dev
 ```
 
-Open `http://localhost:3000`. Seed password for all accounts is `LocalDemo123!`:
+Open `http://localhost:3000`. The teacher/student seed password is `LocalDemo123!`:
 
 - `teacher@example.com`
 - `student1@example.com` through `student5@example.com`
+
+The local-only Super Admin uses `admin@example.com` with password `AdminLocal123!`. Do not use seeded credentials in production.
 
 Useful checks:
 
@@ -56,7 +59,7 @@ npx supabase test db
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser/server | Public anon key; RLS remains mandatory |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server/seed only | Optional administrative scripts; never expose publicly |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Required for Super Admin Auth user management; never expose publicly |
 | `NEXT_PUBLIC_APP_URL` | Server | Canonical app URL |
 | `APP_TIMEZONE` | Server | Display/configuration timezone; stored timestamps remain UTC |
 
@@ -70,7 +73,7 @@ The authoritative flow is:
 
 `published exam → exam_attempt → ordered section_attempt → autosaved answers → submit/expire → database grading`
 
-See [engineering report](docs/ENGINEERING_REPORT.md), [exam administration](docs/EXAM_ADMINISTRATION.md), [bulk question import architecture](docs/BULK_QUESTION_IMPORT.md), [edge-case decisions](docs/EDGE_CASES.md), and [deployment checklist](docs/DEPLOYMENT.md).
+See [engineering report](docs/ENGINEERING_REPORT.md), [exam administration](docs/EXAM_ADMINISTRATION.md), [user administration](docs/USER_ADMINISTRATION.md), [bulk question import architecture](docs/BULK_QUESTION_IMPORT.md), [edge-case decisions](docs/EDGE_CASES.md), and [deployment checklist](docs/DEPLOYMENT.md).
 
 ## Load test
 
