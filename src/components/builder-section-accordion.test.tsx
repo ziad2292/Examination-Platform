@@ -14,5 +14,7 @@ describe("BuilderSectionAccordion", () => {
     expect(markup).toContain("Question editor one");
     expect(markup).not.toContain("Question editor two");
     expect(nextActiveSection("one", "two")).toBe("two");
+    expect(nextActiveSection("one", "one")).toBeNull();
+    expect(markup).toContain("Minimize all sections");
   });
 });

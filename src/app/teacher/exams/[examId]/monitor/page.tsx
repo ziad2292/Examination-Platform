@@ -44,7 +44,7 @@ export default async function ExamMonitor({ params }: { params: Promise<{ examId
 
   return <div>
     <PollingRefresh intervalMs={15000} />
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="eyebrow">Live exam status · refreshes every 15 seconds</p><h1 className="mt-2 text-3xl font-bold">{exam.title}</h1><p className="mt-2 text-black/50">{formatAppDateTime(exam.scheduled_start_at)} — {formatAppDateTime(exam.scheduled_end_at)}</p></div><Link className="btn-secondary" href={`/teacher/exams/${examId}`}>Manage exam</Link></div>
+    <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="eyebrow">Live exam status</p><h1 className="mt-2 text-3xl font-bold">{exam.title}</h1><p className="mt-2 text-black/50">{formatAppDateTime(exam.scheduled_start_at)} — {formatAppDateTime(exam.scheduled_end_at)}</p></div><Link className="btn-secondary" href={`/teacher/exams/${examId}`}>Manage exam</Link></div>
     <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {[{ label: "Not started", value: counts.notStarted, icon: Users, tone: "bg-slate-50 text-slate-700" }, { label: "In progress", value: counts.inProgress, icon: Activity, tone: "bg-blue-50 text-blue-700" }, { label: "Completed", value: counts.completed, icon: CheckCircle2, tone: "bg-green-50 text-green-800" }, { label: "Expired / reset", value: counts.problem, icon: XCircle, tone: "bg-amber-50 text-amber-800" }].map((item) => <section className={`card p-5 ${item.tone}`} key={item.label}><item.icon size={21} /><p className="mt-3 text-3xl font-bold tabular-nums">{item.value}</p><p className="mt-1 text-sm font-semibold">{item.label}</p></section>)}
     </div>
