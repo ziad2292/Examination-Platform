@@ -76,8 +76,14 @@ export default async function ExamEditor({
   // eslint-disable-next-line react-hooks/purity
   const requestTime = Date.now();
   const currentlyRunning = exam.status === "published" && requestTime >= new Date(exam.scheduled_start_at).getTime() && requestTime < new Date(exam.scheduled_end_at).getTime();
-  const canDelete = attempts === 0 && !currentlyRunning;
-  const deleteBlockedReason = attempts > 0 ? "Delete is unavailable because student attempt history must be preserved. Archive this exam instead." : currentlyRunning ? "Delete is unavailable while the exam window is active. Close the exam first." : null;
+  const canDelete = activeAttempts === 0 && (exam.status === "closed" || (exam.status === "draft" && attempts === 0));
+  const deleteBlockedReason = activeAttempts > 0 || currentlyRunning || exam.status === "published"
+    ? "Permanent deletion is unavailable while an exam is published or has an active attempt. Close the exam first."
+    : exam.status === "archived"
+      ? "Restore this exam to a closed state before permanently deleting it."
+      : attempts > 0 && exam.status !== "closed"
+        ? "Close this exam before permanently deleting its historical results."
+        : null;
   const messages: Record<string, string> = {
     invalid_details: "Check the exam details and schedule.",
     update_failed: "Those details could not be saved. Reload if this exam changed in another tab.",
@@ -86,7 +92,7 @@ export default async function ExamEditor({
     close_failed: "Only a published exam can be closed.",
     archive_failed: "Finish or administer active attempts before archiving this exam.",
     delete_active: "An exam cannot be deleted while its testing window is active.",
-    delete_history: "This exam has student history and must be archived instead of deleted.",
+    delete_close_first: "Close the exam before permanently deleting it and its historical results.",
     delete_confirmation: "The exam title did not match, so nothing was deleted.",
     delete_failed: "The exam could not be deleted safely.",
   };

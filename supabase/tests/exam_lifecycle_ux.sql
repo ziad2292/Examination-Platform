@@ -29,8 +29,8 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001'
 select lives_ok($$select public.publish_exam('d0000000-0000-4000-8000-000000000001','d9000000-0000-4000-8000-000000000001')$$,'closed exam can be reopened when its schedule remains valid');
 select is((select status::text from public.exams where id='d0000000-0000-4000-8000-000000000001'),'published','reopen changes status to published');
 select lives_ok($$select public.reschedule_exam('d0000000-0000-4000-8000-000000000002',date_trunc('minute',(select scheduled_start_at from public.exams where id='d0000000-0000-4000-8000-000000000002')),now()+interval '3 hours',false,(select updated_at from public.exams where id='d0000000-0000-4000-8000-000000000002'),'','d9000000-0000-4000-8000-000000000002')$$,'reschedule preserves the exact opening time after attempts exist');
-select lives_ok($$select public.delete_exam('d0000000-0000-4000-8000-000000000003','Safe delete fixture','Safe cleanup','d9000000-0000-4000-8000-000000000003')$$,'inactive exam without attempts can be deleted');
-select throws_ok($$select public.delete_exam('d0000000-0000-4000-8000-000000000004','Active delete fixture','Unsafe cleanup','d9000000-0000-4000-8000-000000000004')$$,'P0001','An active exam cannot be deleted','currently active exam cannot be deleted');
+select lives_ok($$select public.delete_exam('d0000000-0000-4000-8000-000000000003','DELETE Safe delete fixture','Safe cleanup','d9000000-0000-4000-8000-000000000003')$$,'inactive exam without attempts can be deleted');
+select throws_ok($$select public.delete_exam('d0000000-0000-4000-8000-000000000004','DELETE Active delete fixture','Unsafe cleanup','d9000000-0000-4000-8000-000000000004')$$,'P0001','An active exam cannot be deleted; close it first','currently active exam cannot be deleted');
 select lives_ok($$select public.create_section('d0000000-0000-4000-8000-000000000009','2','module',600)$$,'numeric-only section names are accepted');
 
 select set_config('request.jwt.claim.sub','20000000-0000-0000-0000-000000000001',true);

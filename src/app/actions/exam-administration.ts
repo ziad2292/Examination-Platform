@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { cleanupDeletedExamImages } from "@/lib/exam-storage-cleanup";
 import { requireRole } from "@/lib/auth";
 import { localDateTimeToIso } from "@/lib/exam-state";
 import type { FormActionState } from "@/lib/form-state";
@@ -198,17 +199,13 @@ export async function deleteExam(formData: FormData) {
   });
   if (error) {
     console.error("Exam deletion failed", { code: error.code });
-    const code = error.message.includes("active exam") ? "delete_active" : error.message.includes("attempts") ? "delete_history" : error.message.includes("confirmation") ? "delete_confirmation" : "delete_failed";
+    const code = error.message.includes("active exam") ? "delete_active" : error.message.includes("Close the exam") ? "delete_close_first" : error.message.includes("confirmation") ? "delete_confirmation" : "delete_failed";
     redirect(adminErrorPath(examId, code));
   }
   const paths = (data ?? []) as string[];
   if (paths.length) {
-    const cleanup = await supabase.storage.from("question-images").remove(paths);
-    if (!cleanup.error) {
-      await supabase.rpc("acknowledge_storage_cleanup", { cleaned_paths: paths });
-    } else {
-      console.error("Deferred exam image cleanup", { code: cleanup.error.name });
-    }
+    const cleanup = await cleanupDeletedExamImages(supabase, paths);
+    if (!cleanup.ok) console.error("Deferred exam image cleanup", { stage: cleanup.stage, code: cleanup.errorName });
   }
   revalidatePath("/teacher");
   redirect("/teacher?notice=deleted");

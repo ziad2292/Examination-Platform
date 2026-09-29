@@ -157,14 +157,14 @@ select throws_ok($$select public.replace_question_image('b2000000-0000-0000-0000
 
 -- Hard delete is limited to untouched drafts and queues images safely.
 insert into public.exams(id,title,status,scheduled_start_at,scheduled_end_at,created_by) values('b0000000-0000-0000-0000-000000000030','Disposable draft','draft',now()+interval '1 day',now()+interval '2 days','10000000-0000-0000-0000-000000000001');
-select lives_ok($$select public.delete_exam('b0000000-0000-0000-0000-000000000030','Disposable draft','No longer needed','b9000000-0000-4000-8000-000000000022')$$,'untouched draft can be permanently deleted');
+select lives_ok($$select public.delete_exam('b0000000-0000-0000-0000-000000000030','DELETE Disposable draft','No longer needed','b9000000-0000-4000-8000-000000000022')$$,'untouched draft can be permanently deleted');
 select is((select count(*)::integer from public.exams where id='b0000000-0000-0000-0000-000000000030'),0,'hard delete removes the draft');
 insert into public.exams(id,title,status,scheduled_start_at,scheduled_end_at,created_by) values('b0000000-0000-0000-0000-000000000031','Draft with history','draft',now()+interval '1 day',now()+interval '2 days','10000000-0000-0000-0000-000000000001');
 reset role;
 insert into public.exam_attempts(exam_id,student_id) values('b0000000-0000-0000-0000-000000000031','20000000-0000-0000-0000-000000000003');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
-select throws_ok($$select public.delete_exam('b0000000-0000-0000-0000-000000000031','Draft with history','Unsafe delete','b9000000-0000-4000-8000-000000000023')$$,'P0001','Exams with attempts must be archived, not deleted','hard delete preserves attempts and results');
+select throws_ok($$select public.delete_exam('b0000000-0000-0000-0000-000000000031','DELETE Draft with history','Unsafe delete','b9000000-0000-4000-8000-000000000023')$$,'P0001','An active exam cannot be deleted; close it first','hard delete preserves attempts and results');
 
 -- Validation reports distinct production blockers.
 reset role;
