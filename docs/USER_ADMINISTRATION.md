@@ -17,7 +17,28 @@ These credentials are for the disposable local Supabase stack only. Never run `s
 
 ## Creating a production Super Admin
 
-Do not commit a production password or automate a fixed privileged credential. Create a normal confirmed Auth user through the Supabase Dashboard or an approved identity-provider flow, then promote the corresponding profile in the production SQL editor after verifying the user ID and email:
+Do not commit a production password or place it in a migration, seed file, build argument, or client-visible variable. After production migrations are applied, configure these server-only environment variables in the deployment environment:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<production-service-role-key>
+BOOTSTRAP_SUPERADMIN_ENABLED=true
+BOOTSTRAP_SUPERADMIN_FULL_NAME=<administrator-name>
+BOOTSTRAP_SUPERADMIN_EMAIL=<administrator-email>
+BOOTSTRAP_SUPERADMIN_PASSWORD=<12+-character-password>
+```
+
+The password must contain uppercase, lowercase, numeric, and symbol characters. Run the bootstrap once from a protected deployment job or administrator terminal whose environment contains those values:
+
+```bash
+npm run bootstrap:superadmin
+```
+
+The command creates a confirmed Supabase Auth user, creates the matching active `superadmin` profile, and records a password-free audit event. If the email already belongs to a Super Admin, the command is idempotent and does not reset the password. Set `BOOTSTRAP_SUPERADMIN_ROTATE_PASSWORD=true` only for a deliberate rotation. If the email belongs to a student or teacher, the command refuses promotion unless `BOOTSTRAP_SUPERADMIN_ALLOW_PROMOTION=true` is explicitly set after the account is verified.
+
+After success, set `BOOTSTRAP_SUPERADMIN_ENABLED=false` and remove `BOOTSTRAP_SUPERADMIN_PASSWORD` from persistent deployment configuration. Keep `SUPABASE_SERVICE_ROLE_KEY` available only to server runtime features that use the Admin API. Never expose any of these values through `NEXT_PUBLIC_` variables other than the public project URL.
+
+The manual SQL fallback remains available when deployment jobs cannot run Node. Create a normal confirmed Auth user through the Supabase Dashboard, verify its user ID and email, then promote the corresponding profile in the production SQL editor:
 
 ```sql
 update public.profiles
