@@ -36,6 +36,14 @@ Names, emails, roles, and active status can be updated. Email and ban changes ar
 
 Role changes are rejected after a user owns an exam or has an attempt. Historical accounts cannot be hard-deleted. They must be deactivated so exam ownership, answers, scores, and audit attribution remain intact. A history-free account can be deleted after exact-email confirmation; the database rechecks eligibility and foreign keys prevent a concurrent history write from producing an orphan.
 
+## Bulk user import
+
+Super Admins can upload `.csv` or `.xlsx` files with the exact headers `full_name`, `email`, `role`, and `password`. A file is limited to 1 MB and 50 populated rows so Auth creation and rollback remain within a bounded server request. Roles are limited to `student` and `teacher`; names, emails, and passwords use the same production validation as single-user creation. Password whitespace is preserved rather than silently altered. The preview marks every invalid row, every case-insensitive duplicate within the file, and emails already present in either Supabase Auth or `profiles`. No accounts are created until every row passes.
+
+The validated payload is encrypted, bound to the current Super Admin, and expires after 30 minutes. Immediately before execution, the server repeats all validation and the Auth duplicate scan. Passwords exist only in the uploaded file, the short-lived encrypted confirmation token, and the server-side request to Supabase Auth, which hashes them. Passwords are never written to profiles, import journals, audit events, or logs.
+
+`user_import_batches` and `user_import_items` record the actor, time, source-file hash, sanitized row identity, and per-row outcome. If any Auth/profile row or the completion audit fails, the action removes every account created by that batch. A fully rolled-back batch is safe to retry; a rollback failure is locked for administrator review. Imported Auth users carry only recovery metadata identifying their batch and row, allowing an interrupted import to be recovered after its processing lease becomes stale.
+
 ## Exam builder behavior
 
 Exam sections are compact accordion cards. The first section opens initially; other modules and breaks remain minimized until the teacher explicitly expands them. Summaries show type, order, duration, question count, and readiness at a glance. Existing question ordering, bulk import, manual add, image replacement, and immutability rules remain inside the expanded editor.
