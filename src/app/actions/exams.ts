@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
@@ -13,7 +14,7 @@ function value(formData: FormData, key: string) {
 }
 
 export async function createExam(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
-  const viewer = await requireRole("teacher");
+  await requireRole("teacher");
   const startOffsetValue = value(formData, "scheduledStartOffset");
   const endOffsetValue = value(formData, "scheduledEndOffset");
   const scheduledStartAt = localDateTimeToIso(
@@ -34,34 +35,21 @@ export async function createExam(_previous: FormActionState, formData: FormData)
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the exam details and schedule." };
 
+  const request = z.uuid().safeParse(formData.get("requestId"));
+  if (!request.success) return { ok: false, message: "Reload the draft form and try again." };
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("exams")
-    .insert({
-      title: parsed.data.title,
-      description: parsed.data.description || null,
-      instructions: parsed.data.instructions || null,
-      access_code_required: Boolean(parsed.data.accessCode),
-      scheduled_start_at: parsed.data.scheduledStartAt,
-      scheduled_end_at: parsed.data.scheduledEndAt,
-      created_by: viewer.id,
-    })
-    .select("id")
-    .single();
-  if (error) return { ok: false, message: "The exam could not be created. Check the schedule and try again." };
-
-  if (parsed.data.accessCode) {
-    const codeResult = await supabase.from("exam_access_codes").insert({
-      exam_id: data.id,
-      access_code: parsed.data.accessCode,
-    });
-    if (codeResult.error) {
-      await supabase.from("exams").delete().eq("id", data.id);
-      return { ok: false, message: "The access code could not be saved. No partial exam was retained." };
-    }
-  }
-
-  redirect(`/teacher/exams/${data.id}`);
+  const { data, error } = await supabase.rpc("create_exam_draft", {
+    request_id: request.data,
+    exam_title: parsed.data.title,
+    exam_description: parsed.data.description || null,
+    exam_instructions: parsed.data.instructions || null,
+    starts_at: parsed.data.scheduledStartAt,
+    ends_at: parsed.data.scheduledEndAt,
+    access_code: parsed.data.accessCode || null,
+    show_results: formData.get("showResults") === "on",
+  });
+  if (error || !data) return { ok: false, message: "The exam could not be created. Check the details and try again." };
+  redirect(`/teacher/exams/${data}`);
 }
 
 export async function addSection(_previous: FormActionState, formData: FormData): Promise<FormActionState> {
@@ -74,7 +62,7 @@ export async function addSection(_previous: FormActionState, formData: FormData)
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the section details." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_section", {
+  const { data: section, error } = await supabase.rpc("create_section", {
     target_exam: parsed.data.examId,
     new_title: parsed.data.title,
     new_type: parsed.data.sectionType,
@@ -85,6 +73,14 @@ export async function addSection(_previous: FormActionState, formData: FormData)
     if (message.includes("locked")) return { ok: false, message: "Sections can only be added before students begin the exam." };
     if (message.includes("not found")) return { ok: false, message: "This exam is unavailable or you no longer have access to it." };
     return { ok: false, message: "The section could not be added. Check its name and duration." };
+  }
+  if (section && parsed.data.sectionType === "module" && formData.get("allowCalculator") === "on") {
+    const { error: settingsError } = await supabase.rpc("update_section_settings", {
+      target_section: section.id,
+      new_duration_seconds: parsed.data.durationSeconds,
+      new_allow_calculator: true,
+    });
+    if (settingsError) return { ok: false, message: "The section was added, but its calculator setting could not be saved." };
   }
   revalidatePath(`/teacher/exams/${parsed.data.examId}`);
   return { ok: true, message: "Section added." };

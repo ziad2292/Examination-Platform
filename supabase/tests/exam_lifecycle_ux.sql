@@ -13,6 +13,12 @@ insert into public.exams(id,title,status,scheduled_start_at,scheduled_end_at,pub
 ('d0000000-0000-4000-8000-000000000007','Code start fixture','published',now()-interval '1 hour',now()+interval '1 hour',now(),'10000000-0000-0000-0000-000000000001'),
 ('d0000000-0000-4000-8000-000000000008','Retake start fixture','published',now()-interval '1 hour',now()+interval '1 hour',now(),'10000000-0000-0000-0000-000000000001'),
 ('d0000000-0000-4000-8000-000000000009','Numeric section fixture','draft',now()+interval '1 hour',now()+interval '2 hours',null,'10000000-0000-0000-0000-000000000001');
+insert into public.exam_student_assignments(exam_id,student_id,assigned_by)
+select id,'20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001'
+from public.exams where id in(
+  'd0000000-0000-4000-8000-000000000005','d0000000-0000-4000-8000-000000000006',
+  'd0000000-0000-4000-8000-000000000007','d0000000-0000-4000-8000-000000000008'
+);
 insert into public.exam_sections(id,exam_id,title,section_type,section_order,duration_seconds) values
 ('d1000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000001','Module','module',1,600);
 insert into public.questions(id,section_id,question_order,optional_text,option_a,option_b,option_c,option_d) values

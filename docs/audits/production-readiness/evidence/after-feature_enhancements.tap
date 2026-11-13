@@ -1,0 +1,31 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..22
+ok 1 - students can have a teacher owner
+ok 2 - exam assignments use a join table
+ok 3 - duplicate assignments are prevented
+ok 4 - calculator permission is per module
+ok 5 - result visibility is per exam
+ok 6 - Function public.set_exam_student_assignments(uuid, uuid[]) should exist
+ok 7 - Function public.admin_factory_cleanup(text, text, uuid) should exist
+20000000-0000-0000-0000-000000000001
+ok 8 - assigned student sees the exam
+ok 9 - assigned student sees sections
+20000000-0000-0000-0000-000000000002
+ok 10 - unassigned student cannot see the exam
+ok 11 - unassigned student cannot start by direct RPC
+10000000-0000-0000-0000-000000000001
+ok 12 - teacher sees only owned students
+ok 13 - teacher can query their exam code record
+ok 14 - teacher can edit break duration before attempts
+ok 15 - break duration persists
+ok 16 - invalid break duration is rejected
+ok 17 - teacher can hide student results
+ok 18 - hidden-result setting persists
+20000000-0000-0000-0000-000000000001
+ok 19 - hidden score RPC does not reveal marks
+10000000-0000-0000-0000-000000000001
+ok 20 - teacher cannot call factory cleanup
+90000000-0000-0000-0000-000000000001
+{"iat": 1794248898, "sub": "90000000-0000-0000-0000-000000000001"}
+ok 21 - recently authenticated Super Admin can run transactional student cleanup
+ok 22 - factory cleanup preserves teacher and administrator accounts

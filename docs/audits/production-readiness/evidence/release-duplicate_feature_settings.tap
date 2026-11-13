@@ -1,0 +1,8 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..5
+10000000-0000-0000-0000-000000000001
+ok 1 - begin disposable duplication
+ok 2 - complete disposable duplication
+ok 3 - duplicate preserves result visibility
+ok 4 - duplicate preserves calculator permission
+ok 5 - duplicate never copies attempts

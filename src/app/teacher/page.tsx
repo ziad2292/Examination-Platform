@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Archive, ArrowRight, BarChart3, CalendarClock, Copy, Plus, Radio, Search } from "lucide-react";
+import { Archive, ArrowRight, BarChart3, CalendarClock, Copy, Plus, Radio, Search, ClipboardList, CheckCircle2, Users } from "lucide-react";
 import { archiveExam, deleteExam, duplicateExam, restoreExam } from "@/app/actions/exam-administration";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { requireRole } from "@/lib/auth";
@@ -66,17 +66,28 @@ export default async function TeacherDashboard({
     ((countRows ?? []) as { exam_id: string; total_attempts: number; active_attempts: number }[]).map((row) => [row.exam_id, row]),
   );
 
+  const [{count:studentCount},{count:examCount},{count:publishedCount}] = await Promise.all([supabase.from("profiles").select("id",{count:"exact",head:true}).eq("role","student"),supabase.from("exams").select("id",{count:"exact",head:true}),supabase.from("exams").select("id",{count:"exact",head:true}).eq("status","published")]);
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="eyebrow">Teacher workspace</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Exam operations</h1>
-          <p className="mt-2 text-black/55">Build, schedule, monitor, and preserve every exam lifecycle.</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Your assessments</h1>
+          <p className="mt-2 text-black/55">Create, manage, and measure learning in one focused workspace.</p>
         </div>
         <Link className="btn-primary" href="/teacher/exams/new"><Plus size={18} />New exam</Link>
       </div>
 
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {[
+          { label: "Assessments", count: examCount, icon: ClipboardList, tone: "bg-brand/5 text-brand" },
+          { label: "Published", count: publishedCount, icon: CheckCircle2, tone: "bg-green-50 text-green-800" },
+          { label: "My students", count: studentCount, icon: Users, tone: "bg-slate-100 text-slate-700" },
+        ].map(({ label, count, icon: Icon, tone }) => <div className="card flex items-center gap-4 p-5" key={label}>
+          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}><Icon size={19} aria-hidden="true" /></span>
+          <dl><dt className="text-sm text-black/60">{label}</dt><dd className="text-2xl font-bold tabular-nums">{count ?? 0}</dd></dl>
+        </div>)}
+      </div>
       {filters.notice && (
         <p role="status" className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">
           Exam operation completed successfully.
@@ -114,7 +125,7 @@ export default async function TeacherDashboard({
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${badge[exam.status]}`}>{exam.status}</span>
                     {hasActiveAttempts && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{counts.active_attempts} active</span>}
                   </div>
-                  <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-black/50"><CalendarClock className="mt-0.5 shrink-0" size={15} /><span>{formatAppDateTime(exam.scheduled_start_at)} — {formatAppDateTime(exam.scheduled_end_at)}</span></p>
+                  <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-black/60"><CalendarClock className="mt-0.5 shrink-0" size={15} /><span>{formatAppDateTime(exam.scheduled_start_at)} — {formatAppDateTime(exam.scheduled_end_at)}</span></p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Link className="btn-secondary !min-h-10 !px-4" href={`/teacher/exams/${exam.id}/monitor`}><Radio size={16} />Monitor</Link>
@@ -142,12 +153,12 @@ export default async function TeacherDashboard({
                       )}
                       {exam.status === "draft" && !hasAttempts && (
                         <form action={deleteExam}>
-                          <input type="hidden" name="examId" value={exam.id} /><input type="hidden" name="confirmationTitle" value={exam.title} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Permanently deleted untouched draft" />
-                          <ConfirmSubmitButton className="btn-danger w-full" label="Delete draft" confirmation={`Permanently delete “${exam.title}”? Its questions and queued Storage images will be removed. This cannot be undone.`} requiredText={exam.title} />
+                          <input type="hidden" name="examId" value={exam.id} /><input type="hidden" name="confirmationTitle" value={`DELETE ${exam.title}`} /><input type="hidden" name="operationKey" value={crypto.randomUUID()} /><input type="hidden" name="reason" value="Permanently deleted untouched draft" />
+                          <ConfirmSubmitButton className="btn-danger w-full" label="Delete draft" confirmation={`Permanently delete “${exam.title}”? Its questions and queued Storage images will be removed. This cannot be undone.`} requiredText={`DELETE ${exam.title}`} />
                         </form>
                       )}
-                      {hasAttempts && <p className="text-xs leading-5 text-black/45"><Archive className="mr-1 inline" size={13} />Exams with attempts can only be archived; historical attempts are preserved.</p>}
-                      {!hasAttempts && <p className="text-xs leading-5 text-black/45"><Copy className="mr-1 inline" size={13} />Copies never include attempts, answers, or results.</p>}
+                      {hasAttempts && <p className="text-xs leading-5 text-black/60"><Archive className="mr-1 inline" size={13} />Exams with attempts can only be archived; historical attempts are preserved.</p>}
+                      {!hasAttempts && <p className="text-xs leading-5 text-black/60"><Copy className="mr-1 inline" size={13} />Copies never include attempts, answers, or results.</p>}
                     </div>
                   </details>
                 </div>

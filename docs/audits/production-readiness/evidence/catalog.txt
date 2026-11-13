@@ -1,0 +1,192 @@
+                                   version
+------------------------------------------------------------------------------
+ PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit
+(1 row)
+
+         relname          | relrowsecurity
+--------------------------+----------------
+ admin_audit_events       | t
+ answer_key_corrections   | t
+ answer_results           | t
+ answers                  | t
+ attempt_browser_sessions | t
+ attempt_integrity_events | t
+ attempt_integrity_state  | t
+ exam_access_codes        | t
+ exam_attempts            | t
+ exam_duplication_jobs    | t
+ exam_integrity_settings  | t
+ exam_retake_grants       | t
+ exam_sections            | t
+ exam_student_assignments | t
+ exams                    | t
+ integrity_global_policy  | t
+ integrity_review_actions | t
+ profiles                 | t
+ question_import_batches  | t
+ question_import_items    | t
+ question_keys            | t
+ questions                | t
+ section_attempts         | t
+ storage_cleanup_jobs     | t
+ student_teachers         | t
+ user_import_batches      | t
+ user_import_items        | t
+(27 rows)
+
+     proname      | proconfig
+------------------+-----------
+ dblink_connect_u |
+ dblink_connect_u |
+(2 rows)
+
+ connections
+-------------
+          44
+(1 row)
+
+ max_connections
+-----------------
+ 100
+(1 row)
+
+ schemaname |         relname          | n_live_tup | seq_scan | idx_scan
+------------+--------------------------+------------+----------+----------
+ public     | admin_audit_events       |         82 |     4247 |      882
+ public     | answer_key_corrections   |          0 |      751 |     1705
+ public     | answer_results           |         17 |      277 |      302
+ public     | answers                  |         17 |     2703 |      531
+ public     | attempt_browser_sessions |          1 |     3327 |    13853
+ public     | attempt_integrity_events |         13 |     5745 |     6681
+ public     | attempt_integrity_state  |          5 |     2826 |    23058
+ public     | exam_access_codes        |          0 |        1 |      453
+ public     | exam_attempts            |          5 |    14445 |    20171
+ public     | exam_duplication_jobs    |          1 |      451 |     1697
+ public     | exam_integrity_settings  |          1 |      277 |     1634
+ public     | exam_retake_grants       |          0 |     5824 |     1379
+ public     | exam_sections            |          5 |     9880 |    12812
+ public     | exam_student_assignments |          5 |     8310 |     1137
+ public     | exams                    |          4 |    75669 |     8541
+ public     | integrity_global_policy  |          1 |        2 |      211
+ public     | integrity_review_actions |          2 |     3799 |     3026
+ public     | profiles                 |          9 |   129558 |   123498
+ public     | question_import_batches  |          0 |     2651 |     1495
+ public     | question_import_items    |          0 |      357 |      139
+ public     | question_keys            |          4 |     1649 |     2607
+ public     | questions                |          4 |     8723 |     4613
+ public     | section_attempts         |         14 |     4364 |     1094
+ public     | storage_cleanup_jobs     |          0 |     1723 |       45
+ public     | student_teachers         |          7 |        2 |     3263
+ public     | user_import_batches      |          0 |        3 |     1660
+ public     | user_import_items        |          0 |        2 |       30
+(27 rows)
+
+        tablename         |                            indexname                            |                                                                                               indexdef
+--------------------------+-----------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ admin_audit_events       | admin_audit_events_pkey                                         | CREATE UNIQUE INDEX admin_audit_events_pkey ON public.admin_audit_events USING btree (id)
+ admin_audit_events       | admin_audit_exam_created_idx                                    | CREATE INDEX admin_audit_exam_created_idx ON public.admin_audit_events USING btree (exam_id, created_at DESC)
+ admin_audit_events       | admin_audit_idempotency_unique                                  | CREATE UNIQUE INDEX admin_audit_idempotency_unique ON public.admin_audit_events USING btree (actor_id, action, idempotency_key) WHERE (idempotency_key IS NOT NULL)
+ answer_key_corrections   | answer_key_corrections_corrected_by_operation_key_key           | CREATE UNIQUE INDEX answer_key_corrections_corrected_by_operation_key_key ON public.answer_key_corrections USING btree (corrected_by, operation_key)
+ answer_key_corrections   | answer_key_corrections_pkey                                     | CREATE UNIQUE INDEX answer_key_corrections_pkey ON public.answer_key_corrections USING btree (id)
+ answer_results           | answer_results_pkey                                             | CREATE UNIQUE INDEX answer_results_pkey ON public.answer_results USING btree (answer_id)
+ answers                  | answers_exam_attempt_id_question_id_key                         | CREATE UNIQUE INDEX answers_exam_attempt_id_question_id_key ON public.answers USING btree (exam_attempt_id, question_id)
+ answers                  | answers_pkey                                                    | CREATE UNIQUE INDEX answers_pkey ON public.answers USING btree (id)
+ answers                  | answers_section_attempt_idx                                     | CREATE INDEX answers_section_attempt_idx ON public.answers USING btree (section_attempt_id)
+ attempt_browser_sessions | attempt_browser_sessions_pkey                                   | CREATE UNIQUE INDEX attempt_browser_sessions_pkey ON public.attempt_browser_sessions USING btree (attempt_id, browser_instance_id, document_id)
+ attempt_browser_sessions | integrity_sessions_contact_idx                                  | CREATE INDEX integrity_sessions_contact_idx ON public.attempt_browser_sessions USING btree (attempt_id, last_contact_at)
+ attempt_integrity_events | attempt_integrity_events_attempt_id_browser_instance_id_doc_key | CREATE UNIQUE INDEX attempt_integrity_events_attempt_id_browser_instance_id_doc_key ON public.attempt_integrity_events USING btree (attempt_id, browser_instance_id, document_id, sequence)
+ attempt_integrity_events | attempt_integrity_events_pkey                                   | CREATE UNIQUE INDEX attempt_integrity_events_pkey ON public.attempt_integrity_events USING btree (attempt_id, event_id)
+ attempt_integrity_events | integrity_events_timeline_idx                                   | CREATE INDEX integrity_events_timeline_idx ON public.attempt_integrity_events USING btree (attempt_id, received_at DESC)
+ attempt_integrity_state  | attempt_integrity_state_pkey                                    | CREATE UNIQUE INDEX attempt_integrity_state_pkey ON public.attempt_integrity_state USING btree (attempt_id)
+ attempt_integrity_state  | integrity_summary_exam_idx                                      | CREATE INDEX integrity_summary_exam_idx ON public.attempt_integrity_state USING btree (exam_id, review_required)
+ exam_access_codes        | exam_access_codes_pkey                                          | CREATE UNIQUE INDEX exam_access_codes_pkey ON public.exam_access_codes USING btree (exam_id)
+ exam_attempts            | attempts_student_idx                                            | CREATE INDEX attempts_student_idx ON public.exam_attempts USING btree (student_id, status)
+ exam_attempts            | exam_attempts_exam_status_idx                                   | CREATE INDEX exam_attempts_exam_status_idx ON public.exam_attempts USING btree (exam_id, status, last_seen_at DESC)
+ exam_attempts            | exam_attempts_exam_student_generation_key                       | CREATE UNIQUE INDEX exam_attempts_exam_student_generation_key ON public.exam_attempts USING btree (exam_id, student_id, generation)
+ exam_attempts            | exam_attempts_pkey                                              | CREATE UNIQUE INDEX exam_attempts_pkey ON public.exam_attempts USING btree (id)
+ exam_duplication_jobs    | exam_duplication_jobs_created_by_operation_key_key              | CREATE UNIQUE INDEX exam_duplication_jobs_created_by_operation_key_key ON public.exam_duplication_jobs USING btree (created_by, operation_key)
+ exam_duplication_jobs    | exam_duplication_jobs_pkey                                      | CREATE UNIQUE INDEX exam_duplication_jobs_pkey ON public.exam_duplication_jobs USING btree (target_exam_id)
+ exam_integrity_settings  | exam_integrity_settings_pkey                                    | CREATE UNIQUE INDEX exam_integrity_settings_pkey ON public.exam_integrity_settings USING btree (exam_id)
+ exam_retake_grants       | exam_retake_grants_authorized_by_operation_key_key              | CREATE UNIQUE INDEX exam_retake_grants_authorized_by_operation_key_key ON public.exam_retake_grants USING btree (authorized_by, operation_key)
+ exam_retake_grants       | exam_retake_grants_pkey                                         | CREATE UNIQUE INDEX exam_retake_grants_pkey ON public.exam_retake_grants USING btree (id)
+ exam_retake_grants       | exam_retake_one_open_grant                                      | CREATE UNIQUE INDEX exam_retake_one_open_grant ON public.exam_retake_grants USING btree (exam_id, student_id) WHERE (consumed_at IS NULL)
+ exam_sections            | exam_sections_exam_id_section_order_key                         | CREATE UNIQUE INDEX exam_sections_exam_id_section_order_key ON public.exam_sections USING btree (exam_id, section_order)
+ exam_sections            | exam_sections_pkey                                              | CREATE UNIQUE INDEX exam_sections_pkey ON public.exam_sections USING btree (id)
+ exam_sections            | sections_exam_idx                                               | CREATE INDEX sections_exam_idx ON public.exam_sections USING btree (exam_id, section_order)
+ exam_student_assignments | exam_student_assignments_pkey                                   | CREATE UNIQUE INDEX exam_student_assignments_pkey ON public.exam_student_assignments USING btree (exam_id, student_id)
+ exam_student_assignments | exam_student_assignments_student_idx                            | CREATE INDEX exam_student_assignments_student_idx ON public.exam_student_assignments USING btree (student_id, exam_id)
+ exams                    | exams_pkey                                                      | CREATE UNIQUE INDEX exams_pkey ON public.exams USING btree (id)
+ exams                    | exams_schedule_idx                                              | CREATE INDEX exams_schedule_idx ON public.exams USING btree (status, scheduled_start_at, scheduled_end_at)
+ integrity_global_policy  | integrity_global_policy_pkey                                    | CREATE UNIQUE INDEX integrity_global_policy_pkey ON public.integrity_global_policy USING btree (singleton)
+ integrity_review_actions | integrity_exceptions_idx                                        | CREATE INDEX integrity_exceptions_idx ON public.integrity_review_actions USING btree (exam_id, student_id, created_at DESC) WHERE (action = ANY (ARRAY['exception'::text, 'revoke_exception'::text]))
+ integrity_review_actions | integrity_review_actions_pkey                                   | CREATE UNIQUE INDEX integrity_review_actions_pkey ON public.integrity_review_actions USING btree (id)
+ integrity_review_actions | integrity_reviews_attempt_idx                                   | CREATE INDEX integrity_reviews_attempt_idx ON public.integrity_review_actions USING btree (attempt_id, created_at)
+ profiles                 | profiles_admin_search_idx                                       | CREATE INDEX profiles_admin_search_idx ON public.profiles USING btree (role, is_active, created_at DESC)
+ profiles                 | profiles_email_unique_ci                                        | CREATE UNIQUE INDEX profiles_email_unique_ci ON public.profiles USING btree (lower(email))
+ profiles                 | profiles_pkey                                                   | CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)
+ profiles                 | profiles_teacher_idx                                            | CREATE INDEX profiles_teacher_idx ON public.profiles USING btree (teacher_id, role, is_active)
+ question_import_batches  | question_import_batches_owner_idx                               | CREATE INDEX question_import_batches_owner_idx ON public.question_import_batches USING btree (created_by, created_at DESC)
+ question_import_batches  | question_import_batches_pkey                                    | CREATE UNIQUE INDEX question_import_batches_pkey ON public.question_import_batches USING btree (id)
+ question_import_items    | question_import_items_batch_id_content_sha256_key               | CREATE UNIQUE INDEX question_import_items_batch_id_content_sha256_key ON public.question_import_items USING btree (batch_id, content_sha256)
+ question_import_items    | question_import_items_batch_id_image_path_key                   | CREATE UNIQUE INDEX question_import_items_batch_id_image_path_key ON public.question_import_items USING btree (batch_id, image_path)
+ question_import_items    | question_import_items_pkey                                      | CREATE UNIQUE INDEX question_import_items_pkey ON public.question_import_items USING btree (batch_id, item_order)
+ question_import_items    | question_import_items_question_id_key                           | CREATE UNIQUE INDEX question_import_items_question_id_key ON public.question_import_items USING btree (question_id)
+ question_keys            | question_keys_pkey                                              | CREATE UNIQUE INDEX question_keys_pkey ON public.question_keys USING btree (question_id)
+ questions                | questions_image_path_unique                                     | CREATE UNIQUE INDEX questions_image_path_unique ON public.questions USING btree (image_path) WHERE (image_path IS NOT NULL)
+ questions                | questions_pkey                                                  | CREATE UNIQUE INDEX questions_pkey ON public.questions USING btree (id)
+ questions                | questions_section_id_question_order_key                         | CREATE UNIQUE INDEX questions_section_id_question_order_key ON public.questions USING btree (section_id, question_order)
+ questions                | questions_section_idx                                           | CREATE INDEX questions_section_idx ON public.questions USING btree (section_id, question_order)
+ section_attempts         | section_attempts_exam_attempt_id_section_id_key                 | CREATE UNIQUE INDEX section_attempts_exam_attempt_id_section_id_key ON public.section_attempts USING btree (exam_attempt_id, section_id)
+ section_attempts         | section_attempts_pkey                                           | CREATE UNIQUE INDEX section_attempts_pkey ON public.section_attempts USING btree (id)
+ storage_cleanup_jobs     | storage_cleanup_jobs_pkey                                       | CREATE UNIQUE INDEX storage_cleanup_jobs_pkey ON public.storage_cleanup_jobs USING btree (path)
+ student_teachers         | student_teachers_pkey                                           | CREATE UNIQUE INDEX student_teachers_pkey ON public.student_teachers USING btree (student_id, teacher_id)
+ student_teachers         | student_teachers_teacher_idx                                    | CREATE INDEX student_teachers_teacher_idx ON public.student_teachers USING btree (teacher_id, student_id)
+ user_import_batches      | user_import_batches_actor_created_idx                           | CREATE INDEX user_import_batches_actor_created_idx ON public.user_import_batches USING btree (created_by, created_at DESC)
+ user_import_batches      | user_import_batches_created_by_operation_key_key                | CREATE UNIQUE INDEX user_import_batches_created_by_operation_key_key ON public.user_import_batches USING btree (created_by, operation_key)
+ user_import_batches      | user_import_batches_pkey                                        | CREATE UNIQUE INDEX user_import_batches_pkey ON public.user_import_batches USING btree (id)
+ user_import_items        | user_import_items_batch_id_email_key                            | CREATE UNIQUE INDEX user_import_items_batch_id_email_key ON public.user_import_items USING btree (batch_id, email)
+ user_import_items        | user_import_items_pkey                                          | CREATE UNIQUE INDEX user_import_items_pkey ON public.user_import_items USING btree (batch_id, row_number)
+(63 rows)
+
+           jobname            |  schedule  | active
+------------------------------+------------+--------
+ assessly-integrity-retention | 17 3 * * * | t
+(1 row)
+
+        tablename
+-------------------------
+ attempt_integrity_state
+(1 row)
+
+BEGIN
+SET
+              set_config
+--------------------------------------
+ 20000000-0000-0000-0000-000000000001
+(1 row)
+
+                                                                                                                                                                                                                                                                                                             QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5.26..5.26 rows=1 width=44) (actual time=1.116..1.117 rows=1 loops=1)
+   Sort Key: scheduled_start_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=269
+   ->  Seq Scan on exams  (cost=0.00..5.25 rows=1 width=44) (actual time=1.108..1.109 rows=1 loops=1)
+         Filter: (is_active_user() AND ((is_teacher() AND (created_by = (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid)) OR is_superadmin() OR ((status = ANY ('{published,closed}'::exam_status[])) AND student_can_access_exam(id, (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid))) AND (status = ANY ('{published,closed}'::exam_status[])))
+         Rows Removed by Filter: 3
+         Buffers: shared hit=266
+ Planning:
+   Buffers: shared hit=156
+ Planning Time: 0.428 ms
+ Execution Time: 1.144 ms
+(12 rows)
+
+                                                           QUERY PLAN
+--------------------------------------------------------------------------------------------------------------------------------
+ Function Scan on student_exam_attempt_summary  (cost=0.25..10.25 rows=1000 width=33) (actual time=0.408..0.409 rows=1 loops=1)
+   Buffers: shared hit=97
+ Planning Time: 0.019 ms
+ Execution Time: 0.421 ms
+(4 rows)
+
+ROLLBACK

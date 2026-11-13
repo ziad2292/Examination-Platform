@@ -5,6 +5,9 @@ select plan(22);
 
 insert into public.exams(id,title,status,scheduled_start_at,scheduled_end_at,created_by)
 values('a0000000-0000-0000-0000-000000000001','State fixture','draft',now()-interval '1 hour',now()+interval '1 hour','10000000-0000-0000-0000-000000000001');
+update public.exams set show_results_to_students=true where id='a0000000-0000-0000-0000-000000000001';
+insert into public.exam_student_assignments(exam_id,student_id,assigned_by)
+values('a0000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001');
 
 select throws_ok($$update public.exams set status='published' where id='a0000000-0000-0000-0000-000000000001'$$,'P0001','An exam needs at least one section before publishing','empty exam cannot publish');
 insert into public.exam_sections(id,exam_id,title,section_type,section_order,duration_seconds)

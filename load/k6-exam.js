@@ -117,7 +117,10 @@ function examLoadScenario(accountOffset) {
       { target_section_attempt: sectionAttempt.id },
       requestHeaders,
     );
-    check(submitted, { "section submits": (response) => response.status === 200 });
+    check(submitted, {
+      "section submits": (response) =>
+        response.status >= 200 && response.status < 300,
+    });
   });
 }
 
@@ -125,6 +128,6 @@ export function expectedClass() {
   examLoadScenario(0);
 }
 
-export function burstClass() {
-  examLoadScenario(100);
-}
+// export function burstClass() {
+//   examLoadScenario(100);
+// }

@@ -1,0 +1,14 @@
+NOTICE:  extension "pgtap" already exists, skipping
+10000000-0000-0000-0000-000000000001
+ok 1 - closed exam can be reopened when its schedule remains valid
+ok 2 - reopen changes status to published
+ok 3 - reschedule preserves the exact opening time after attempts exist
+ok 4 - inactive exam without attempts can be deleted
+ok 5 - currently active exam cannot be deleted
+ok 6 - numeric-only section names are accepted
+20000000-0000-0000-0000-000000000001
+ok 7 - student receives a specific upcoming-exam reason
+ok 8 - student receives a specific closed-exam reason
+ok 9 - student receives a specific access-code reason
+ok 10 - completed attempt requires an explicit retake grant
+1..10

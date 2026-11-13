@@ -14,7 +14,7 @@ export default async function ActiveSection({
   const { data: sectionAttempt } = await supabase
     .from("section_attempts")
     .select(
-      "id,exam_attempt_id,started_at,expires_at,status,exam_sections(id,title,section_type,exam_id,exams(title))",
+      "id,exam_attempt_id,started_at,expires_at,status,exam_attempts(question_sequence),exam_sections(id,title,section_type,allow_calculator,exam_id,exams(title))",
     )
     .eq("id", sectionAttemptId)
     .eq("exam_attempt_id", attemptId)
@@ -61,6 +61,13 @@ export default async function ActiveSection({
   ]);
 
   const questions = (questionRows ?? []) as StudentQuestion[];
+  const attempt = Array.isArray(sectionAttempt.exam_attempts)
+    ? sectionAttempt.exam_attempts[0] : sectionAttempt.exam_attempts;
+  const sequence = (attempt?.question_sequence ?? []) as string[];
+  if (sequence.length) {
+    const positions = new Map(sequence.map((id, index) => [id, index]));
+    questions.sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
+  }
   const imagePaths = questions
     .map((question) => question.image_path)
     .filter((path): path is string => Boolean(path));
@@ -84,6 +91,7 @@ export default async function ActiveSection({
       sectionTitle={section.title}
       questions={securedQuestions}
       initialAnswers={(answers ?? []) as SavedAnswer[]}
+      allowCalculator={Boolean(section.allow_calculator)}
     />
   );
 }

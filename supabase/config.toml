@@ -13,7 +13,10 @@ port = 54323
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://127.0.0.1:3000/**"]
-enable_signup = false
+enable_signup = true
+
+[auth.email]
+enable_confirmations = true
 [storage]
 enabled = true
 file_size_limit = "8MiB"
