@@ -1,0 +1,34 @@
+NOTICE:  extension "pgtap" already exists, skipping
+10000000-0000-0000-0000-000000000001
+ok 1 - teacher saves monitoring options without a change reason
+ok 2 - legacy settings remain compatible
+ok 3 - teacher cannot change the fixed review threshold
+ok 4 - teacher cannot change the fixed cooldown
+ok 5 - legacy clients cannot enable fullscreen
+ok 6 - teacher cannot access admin policy API
+ok 7 - fullscreen exception API removed
+ok 8 - new attempt snapshots the system constant
+20000000-0000-0000-0000-000000000001
+ok 9 - stale-client fullscreen events never count
+ok 10 - student cannot bypass the public ingestion wrapper
+ok 11 - student cannot access admin policy API
+ok 12 - stale fullscreen observations do not create monitoring records
+ok 13 - ignored fullscreen does not suppress a later attention incident
+90000000-0000-0000-0000-000000000001
+ok 14 - Super Admin sees the authoritative fixed review threshold
+ok 15 - Super Admin sees the authoritative fixed cooldown
+ok 16 - Super Admin can save changed policy
+ok 17 - all eight values persist
+ok 18 - reject incompatible heartbeat and stale windows
+ok 19 - new attempts adopt the saved threshold
+ok 20 - active attempts retain their original threshold
+20000000-0000-0000-0000-000000000001
+ok 21 - custom delayed window excludes a 13-second-old event
+ok 22 - fresh clipboard incident counts
+ok 23 - repeated category is suppressed during cooldown
+ok 24 - after custom cooldown, second incident crosses custom threshold
+ok 25 - session outside custom freshness window does not create overlap
+ok 26 - retention runs with saved policy
+ok 27 - custom retention removes raw history after 60 days
+ok 28 - retention preserves the aggregate
+1..28

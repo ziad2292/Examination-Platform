@@ -1,0 +1,10 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..5
+20000000-0000-0000-0000-000000000001
+ok 1 - latest generation is selected
+ok 2 - status matches existing summary
+ok 3 - one summary per exam
+20000000-0000-0000-0000-000000000002
+ok 4 - other student cannot retrieve summary
+10000000-0000-0000-0000-000000000001
+ok 5 - teacher cannot use student summary

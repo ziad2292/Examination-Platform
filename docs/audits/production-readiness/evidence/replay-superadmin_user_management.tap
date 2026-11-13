@@ -1,0 +1,31 @@
+NOTICE:  extension "pgtap" already exists, skipping
+ok 1 - local seed includes one active Super Admin
+90000000-0000-0000-0000-000000000001
+ok 2 - seeded Super Admin is recognized by database authorization
+ok 3 - Super Admin RLS can list all users
+ok 4 - Super Admin can inspect safe deletion history
+ok 5 - untrusted Auth metadata cannot provision application profiles
+ok 6 - server-provisioned student and teacher profiles have correct roles
+ok 7 - duplicate profile email is rejected case-insensitively
+90000000-0000-0000-0000-000000000001
+ok 8 - Super Admin can update an eligible user
+ok 9 - user details are updated
+ok 10 - Super Admin can deactivate a user
+ok 11 - deactivation is stored
+91000000-0000-0000-0000-000000000001
+ok 12 - inactive session cannot read application profiles
+ok 13 - inactive session cannot mutate through student RPCs
+90000000-0000-0000-0000-000000000001
+ok 14 - last active Super Admin cannot be demoted
+90000000-0000-0000-0000-000000000001
+ok 15 - hard deletion rejects a user with attempts
+ok 16 - role changes reject users with exam history
+ok 17 - history-free account is eligible for hard deletion
+ok 18 - Auth deletion cascades the eligible profile without orphans
+10000000-0000-0000-0000-000000000001
+ok 19 - teacher is not a Super Admin
+ok 20 - teacher cannot invoke user-management RPCs
+20000000-0000-0000-0000-000000000002
+ok 21 - student is not a Super Admin
+ok 22 - student cannot invoke deletion authorization
+1..22

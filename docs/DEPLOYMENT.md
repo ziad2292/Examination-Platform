@@ -1,5 +1,20 @@
 # Deployment checklist
 
+## Staging gate for the current release
+
+There is no staging project configured as of November 13, 2026. Create a separate Supabase project and a Vercel Preview deployment with separate environment variables and test accounts. Do not link the production project to the staging CLI checkout or run `supabase db reset`, seed files, factory cleanup, or load fixtures against production.
+
+1. Take a production backup using the provider's supported procedure. Verify the backup is usable by restoring it into a **separate, access-restricted project**; remove or anonymize personal data before using it for tests. Record recovery time and the oldest recoverable point. This step requires the project's owner and backup configuration.
+2. Apply migrations to staging in filename order from the same reviewed commit, using `supabase db push` only after checking the CLI target with `supabase projects list` and `supabase migration list`. The Next/Vercel deployment does not apply migrations.
+3. Deploy the matching application commit to Vercel Preview. Run the local CI suite, then smoke-test account approval, teacher assignment, exam creation/publish, student start/save/break/submit, results visibility, integrity monitoring, and admin access on staging disposable accounts.
+4. Configure Vercel function/error alerts and Supabase database/Auth/cron alerts. Exercise at least one alert for a synthetic failure. Assign an owner and a response channel. Check the integrity retention job's recent execution and cleanup backlog.
+5. Run staged HTTP workloads with 50, 100, then 200 distinct disposable students. Add five monitoring teachers, answer saves, heartbeats, reconnects, and synchronized starts/submissions. Measure p50/p95/p99 per operation, error and retry rates, database CPU, connection/pool saturation, lock waits, and grading correctness. Stop on sustained errors or unacceptable save delays. Do not run the load suite on production.
+6. Promote the reviewed commit and matching migrations only after recording the staging results, restore drill, monitoring exercise, and an owner-approved capacity target. Roll back application code to a version compatible with the already-applied schema; favor forward database fixes over dropping history.
+
+### Capacity decisions
+
+The existing database-only 200-student burst completed correctly but reached **9.69 s p99 answer-save latency** on a capped 2-CPU database. This is a CPU-saturated synthetic workload, not a measured production limit. First measure the full staging path with HTTP and the Supabase pooler. If CPU saturates, increase database compute and repeat the same workload. If connections saturate before CPU, tune pooler and connection limits within provider guidance. If specific SQL dominates, use `pg_stat_statements` and `EXPLAIN (ANALYZE, BUFFERS)` on staging to optimize those queries and indexes. Keep server-authoritative timers, answer revisions, and grading unchanged. Scale the Vercel app tier only if its own function concurrency or latency is the bottleneck.
+
 ## Supabase production
 
 1. Create a separate production project; never reuse development.

@@ -131,11 +131,15 @@ export async function updateManagedUser(formData: FormData) {
     operation_key: parsed.data.operationKey,
   });
   if (error) {
-    await admin.auth.admin.updateUserById(parsed.data.userId, {
+    const rollback = await admin.auth.admin.updateUserById(parsed.data.userId, {
       email: current.email,
       email_confirm: true,
       ban_duration: current.is_active ? "none" : "876000h",
     });
+    if (rollback.error) {
+      console.error("Managed auth rollback failed", { code: rollback.error.code, operationKey: parsed.data.operationKey });
+      adminRedirect("auth_reconciliation_needed");
+    }
     console.error("Managed profile update failed", { code: error.code });
     adminRedirect("update_rejected");
   }

@@ -1,0 +1,87 @@
+[
+  {
+    "file": "authorization.sql",
+    "passed": 22,
+    "failed": 0
+  },
+  {
+    "file": "bulk_question_import_concurrency.sql",
+    "passed": 6,
+    "failed": 0
+  },
+  {
+    "file": "bulk_question_import.sql",
+    "passed": 24,
+    "failed": 0
+  },
+  {
+    "file": "duplicate_feature_settings.sql",
+    "passed": 5,
+    "failed": 0
+  },
+  {
+    "file": "exam_administration_concurrency.sql",
+    "passed": 15,
+    "failed": 0
+  },
+  {
+    "file": "exam_administration.sql",
+    "passed": 71,
+    "failed": 0
+  },
+  {
+    "file": "exam_lifecycle_ux.sql",
+    "passed": 10,
+    "failed": 0
+  },
+  {
+    "file": "feature_enhancements.sql",
+    "passed": 22,
+    "failed": 0
+  },
+  {
+    "file": "integrity_concurrency.sql",
+    "passed": 6,
+    "failed": 0
+  },
+  {
+    "file": "integrity_fixed_policy.sql",
+    "passed": 28,
+    "failed": 0
+  },
+  {
+    "file": "integrity.sql",
+    "passed": 44,
+    "failed": 0
+  },
+  {
+    "file": "permanent_exam_delete.sql",
+    "passed": 14,
+    "failed": 0
+  },
+  {
+    "file": "rls.sql",
+    "passed": 10,
+    "failed": 0
+  },
+  {
+    "file": "state_machine.sql",
+    "passed": 22,
+    "failed": 0
+  },
+  {
+    "file": "student_expansion.sql",
+    "passed": 47,
+    "failed": 0
+  },
+  {
+    "file": "superadmin_user_management.sql",
+    "passed": 22,
+    "failed": 0
+  },
+  {
+    "file": "user_import_audit.sql",
+    "passed": 6,
+    "failed": 0
+  }
+]

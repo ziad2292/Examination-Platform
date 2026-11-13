@@ -1,0 +1,70 @@
+[
+  {
+    "path": "/",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": [
+      "color-contrast"
+    ]
+  },
+  {
+    "path": "/login",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": [
+      "color-contrast"
+    ]
+  },
+  {
+    "path": "/register",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": [
+      "color-contrast"
+    ]
+  },
+  {
+    "path": "/teacher",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  },
+  {
+    "path": "/teacher/exams/new",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  },
+  {
+    "path": "/student",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": [
+      "color-contrast"
+    ]
+  },
+  {
+    "path": "/student/profile",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  },
+  {
+    "path": "/admin/accounts",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  },
+  {
+    "path": "/admin/students",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  },
+  {
+    "path": "/admin/create",
+    "viewport": "390x844",
+    "violations": [],
+    "incomplete": []
+  }
+]

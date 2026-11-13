@@ -22,6 +22,10 @@
 
 # next.js
 /.next/
+/.next-integrity/
+/.next-audit/
+/.next-remediation/
+/integrity-load-summary.json
 /out/
 
 # production
