@@ -24,13 +24,13 @@
 
 ## Configuration and release gates
 
-- The owner selected integrity monitoring for opted-in exams. Set `NEXT_PUBLIC_INTEGRITY_ENABLED=true` in **Vercel Production** before the release build. A CLI attempt failed with DNS/network error; the setting was **not** saved by that attempt.
+- The owner selected integrity monitoring for opted-in exams. `NEXT_PUBLIC_INTEGRITY_ENABLED=true` was added as a Vercel Production Config variable for the next build. The currently running deployment was not rebuilt.
 - The owner wants embedded Desmos configured before release but has no authorized key yet. Obtain a key and confirm entitlement at https://www.desmos.com/my-api, then set `NEXT_PUBLIC_DESMOS_API_KEY` in Vercel Production before building. Do not use a demo key.
 - Production values of `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_APP_URL` remain unverified because Vercel hides them. An automated request to pull production variables was rejected by auto-review because it would download secret values, including the service-role key. No workaround was attempted. Verify those two public values manually in Vercel without disclosing keys.
-- A `supabase db push --remote --dry-run --skip-vault` attempt did not complete due to the current network problem. The read-only migration list still establishes 13 pending migrations; inspect the final dry run before applying any.
+- `supabase db push --remote --dry-run --skip-vault` succeeded against linked production project `sabhxtwffxwwkzvmqdks`: exactly 13 pending migrations, `202611010001` through `202611100001`; no seeds or roles. The dry run did not apply them.
 
 ## Release decision
 
 **No-go pending configuration and final release review.** No production migration, deployment, backup restore, seed, factory cleanup, or load test was executed. The 13 pending migrations include assignment, integrity, access, and dashboard changes; an older Vercel deployment cannot be assumed compatible with the migrated schema. A Vercel rollback alone would leave database migrations in place.
 
-Before applying migrations, obtain the Desmos key, set and verify the two new Vercel variables, manually check the two public URL values, and complete a migration dry run. Use the [deployment checklist](../DEPLOYMENT.md) for the release order and smoke tests. After those items are concrete and reviewable, obtain final approval for the production mutation.
+Before applying migrations, obtain the Desmos key, set its Vercel variable, and manually check the two public URL values. Use the [deployment checklist](../DEPLOYMENT.md) for the release order and smoke tests. After those items are concrete and reviewable, obtain final approval for the production mutation.
