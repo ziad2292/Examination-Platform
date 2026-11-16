@@ -9,7 +9,7 @@ export default function NewExam() {
         Choose the window when students can begin this exam. Times use your current
         timezone.
       </p>
-      <CreateExamForm />
+      <CreateExamForm requestId={crypto.randomUUID()} />
     </div>
   );
 }

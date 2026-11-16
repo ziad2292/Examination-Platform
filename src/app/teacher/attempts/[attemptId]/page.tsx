@@ -1,3 +1,4 @@
+import { IntegrityTimeline } from "@/components/integrity-timeline";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { authorizeRetake, resetAttempt, teacherSubmitAttempt, teacherSubmitSection } from "@/app/actions/exam-administration";
@@ -74,5 +75,5 @@ export default async function AttemptDetail({
         </div></section>
       </aside>
     </div>
-  </div>;
+  <IntegrityTimeline examId={exam.id} attemptId={attemptId}/></div>;
 }

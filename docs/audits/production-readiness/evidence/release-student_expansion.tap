@@ -1,0 +1,66 @@
+NOTICE:  extension "pgtap" already exists, skipping
+ok 1 - signup metadata cannot elevate role
+ok 2 - signup starts pending
+ad270000-0000-4000-8000-000000000001
+ok 3 - student can inspect own registration status
+ok 4 - pending user fails active access gate
+ok 5 - pending user cannot read exams
+ok 6 - student cannot self-approve
+90000000-0000-0000-0000-000000000001
+ok 7 - approval requires verified email
+90000000-0000-0000-0000-000000000001
+ok 8 - verified account can be approved
+ok 9 - approval retry is safe
+ok 10 - administrator can reject with private note
+ok 11 - rejection persists
+ok 12 - first teacher link
+ok 13 - second teacher link
+10000000-0000-0000-0000-000000000001
+ok 14 - teacher A sees shared student
+ad270000-0000-4000-8000-000000000002
+ok 15 - teacher B sees shared student
+ad270000-0000-4000-8000-000000000003
+ok 16 - teacher C cannot see unlinked student
+10000000-0000-0000-0000-000000000001
+ok 17 - draft owner enables randomized delivery
+ok 18 - teacher A assigns own exam
+ad270000-0000-4000-8000-000000000002
+ok 19 - shared student gives no teacher exam access
+ok 20 - teacher B assigns own exam
+ok 21 - teacher B publishes assigned exam
+ok 22 - teacher B publishes unassigned exam
+10000000-0000-0000-0000-000000000001
+ok 23 - teacher A publishes randomized exam
+ad270000-0000-4000-8000-000000000001
+ok 24 - student profile lists both teachers
+ok 25 - student sees only explicitly assigned exams across teachers
+ok 26 - unassigned exam cannot start
+ok 27 - randomized exam starts
+ok 28 - attempt snapshots a complete permutation
+{ad270000-0000-4000-8000-000000000030,ad270000-0000-4000-8000-000000000031}
+ok 29 - resume returns stable order
+ok 30 - delivery never reveals keys
+ok 31 - randomized section starts
+ok 32 - answer saves by question identity
+ok 33 - submission persists
+ok 34 - profile hides unreleased mark
+10000000-0000-0000-0000-000000000001
+ok 35 - teacher releases marks
+ok 36 - cannot change published delivery
+ad270000-0000-4000-8000-000000000001
+ok 37 - released grade is correct by question identity
+20000000-0000-0000-0000-000000000001
+ok 38 - other student cannot read grade
+90000000-0000-0000-0000-000000000001
+ok 39 - admin removes only one teacher link
+ad270000-0000-4000-8000-000000000001
+ok 40 - other teacher link survives removal
+ok 41 - removing teacher revokes unstarted exam access
+10000000-0000-0000-0000-000000000001
+ok 42 - draft and access code save together
+ok 43 - duplicate draft request reuses the same ID
+ok 44 - duplicate request creates exactly one draft
+ok 45 - draft contains its access code
+ok 46 - invalid code rolls back the draft
+ok 47 - failed draft has no partial row
+1..47

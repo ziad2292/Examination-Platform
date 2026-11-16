@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { Children, isValidElement, createContext, type ReactNode, useContext, useState } from "react";
 import { BookOpen, CheckCircle2, Coffee } from "lucide-react";
 
 const BuilderAccordionContext = createContext<{ activeId: string | null; setActiveId: (id: string | null) => void } | null>(null);
@@ -11,7 +11,8 @@ export function nextActiveSection(currentId: string | null, selectedId: string) 
 
 export function BuilderAccordionGroup({ initialSectionId, children }: { initialSectionId: string; children: ReactNode }) {
   const [activeId, setActive] = useState<string | null>(initialSectionId);
-  return <BuilderAccordionContext.Provider value={{ activeId, setActiveId: (id) => setActive((current) => id === null ? null : nextActiveSection(current, id)) }}><div><div className="mb-3 flex justify-end"><button className="btn-ghost !min-h-9 text-sm" type="button" disabled={activeId === null} onClick={() => setActive(null)}>Minimize all sections</button></div><div className="space-y-4">{children}</div></div></BuilderAccordionContext.Provider>;
+  const sections = Children.toArray(children).filter(isValidElement) as React.ReactElement<{id:string;title:string;type:string;durationMinutes:number;questionCount:number}>[];
+  return <BuilderAccordionContext.Provider value={{ activeId, setActiveId: (id) => setActive(id) }}><div className="module-workspace"><nav className="module-navigation" aria-label="Modules and breaks"><p className="eyebrow mb-3">Assessment structure</p>{sections.map((section,index)=><button type="button" key={section.props.id} className={activeId===section.props.id ? "active" : ""} aria-expanded={activeId===section.props.id} onClick={()=>setActive(section.props.id)}><span className="text-xs text-black/40">{String(index+1).padStart(2,"0")} · {section.props.type}</span><b>{section.props.title}</b><small>{section.props.durationMinutes} min · {section.props.questionCount} questions</small></button>)}<button className="text-xs" type="button" disabled={activeId===null} onClick={()=>setActive(null)}>Minimize all sections</button></nav><div className="min-w-0">{children}</div></div></BuilderAccordionContext.Provider>;
 }
 
 export function BuilderSectionAccordion({
@@ -34,8 +35,9 @@ export function BuilderSectionAccordion({
   const accordion = useContext(BuilderAccordionContext);
   if (!accordion) throw new Error("BuilderSectionAccordion must be inside BuilderAccordionGroup");
   const expanded = accordion.activeId === id;
+  if (!expanded) return null;
   return <section className="card overflow-hidden" data-builder-section={type}>
-    <button type="button" className="flex w-full cursor-pointer items-center gap-4 p-5 text-left hover:bg-black/[.02]" aria-expanded={expanded} onClick={() => accordion.setActiveId(id)}>
+    <button type="button" className="flex w-full cursor-pointer items-center gap-4 p-5 text-left hover:bg-black/[.02]" aria-label={`Selected ${type}`} onClick={() => accordion.setActiveId(id)}>
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green-50 text-brand">{type === "module" ? <BookOpen size={19} /> : <Coffee size={19} />}</span>
       <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-wide text-black/40">{type} {order}</p><h2 className="truncate font-bold">{title}</h2></div>
       {type === "module" && <span className="hidden items-center gap-1 text-xs font-semibold text-brand sm:flex"><CheckCircle2 size={15} />{questionCount} question{questionCount === 1 ? "" : "s"}</span>}

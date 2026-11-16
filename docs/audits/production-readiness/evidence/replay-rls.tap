@@ -1,0 +1,12 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..10
+ok 1 - answer keys are separated
+ok 2 - question keys enforce RLS
+ok 3 - attempts enforce RLS
+ok 4 - answers enforce RLS
+ok 5 - Function public.start_exam(uuid, text) should exist
+ok 6 - Function public.start_section(uuid, uuid) should exist
+ok 7 - Function public.save_answer(uuid, uuid, answer_option, boolean, integer) should exist
+ok 8 - Function public.submit_section(uuid) should exist
+ok 9 - question image bucket is private
+ok 10 - question images require an authorization policy

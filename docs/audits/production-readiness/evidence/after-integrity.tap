@@ -1,0 +1,52 @@
+NOTICE:  extension "pgtap" already exists, skipping
+20000000-0000-0000-0000-000000000001
+ok 1 - students cannot select raw monitoring summaries
+ok 2 - students cannot select teacher notes
+ok 3 - direct student event writes denied
+ok 4 - register owned session
+ok 5 - attention episode counts once
+ok 6 - replay is idempotent
+ok 7 - fullscreen loss correlates with attention episode
+ok 8 - clipboard category counts
+ok 9 - restriction cooldown prevents duplicate warning
+ok 10 - connection loss never counts
+ok 11 - delayed observation never retroactively counts
+ok 12 - reload replaces old document without session-overlap warning
+ok 13 - second live browser instance creates overlap incident
+ok 14 - threshold flags teacher review
+ok 15 - repeated heartbeat does not duplicate threshold crossing
+ok 16 - between-module observations do not count
+ok 17 - student receives own authoritative sanitized summary
+ok 18 - student policy response excludes private review reasons
+20000000-0000-0000-0000-000000000002
+ok 19 - another student cannot read policy or summary
+ok 20 - another student cannot ingest observations
+10000000-0000-0000-0000-000000000001
+ok 21 - teacher can read summary
+ok 22 - teacher can dismiss with audit reason
+ok 23 - dismissal recalculates effective count
+ok 24 - dismissal clears current flag
+ok 25 - teacher may reinstate
+ok 26 - reinstatement starts a new unresolved review cycle
+ok 27 - threshold never submits attempt
+ok 28 - monitoring never changes grades
+ok 29 - teacher cannot impersonate a student session
+ok 30 - existing policy snapshot does not change with exam settings
+ok 31 - retake takes independent current settings
+ok 32 - retake never inherits incidents
+ok 33 - raw events notes and sessions are not published
+ok 34 - retention job removes only aged raw monitoring history
+ok 35 - old raw events are purged
+ok 36 - summary recomputation after retention is safe
+ok 37 - retention preserves historical aggregates
+ok 38 - retention preserves review history
+20000000-0000-0000-0000-000000000001
+ok 39 - logging-only ingestion succeeds
+ok 40 - logging-only policy never increases warning count
+ok 41 - logging-only evidence is retained with explicit classification
+20000000-0000-0000-0000-000000000005
+ok 42 - teacher B cannot read teacher A events
+ok 43 - teacher B cannot review teacher A attempt
+20000000-0000-0000-0000-000000000001
+ok 44 - inactive account cannot ingest
+1..44

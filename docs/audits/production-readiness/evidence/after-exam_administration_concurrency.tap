@@ -1,0 +1,55 @@
+NOTICE:  extension "pgtap" already exists, skipping
+NOTICE:  extension "dblink" already exists, skipping
+NOTICE:  function public.test_try_reschedule(uuid,timestamptz,timestamptz,uuid) does not exist, skipping
+NOTICE:  function public.test_try_teacher_submit(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_archive(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_start(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_reset(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_save(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_regrade(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_delete(uuid,uuid) does not exist, skipping
+NOTICE:  function public.test_try_edit(uuid,timestamptz,uuid) does not exist, skipping
+OK
+OK
+1
+1
+0
+0
+ok 1 - one concurrent reschedule wins
+ok 2 - stale concurrent reschedule is rejected
+1
+1
+0
+0
+ok 3 - exactly one delete-or-edit operation wins
+ok 4 - delete/edit race leaves either no draft or the complete edit
+1
+1
+0
+0
+ok 5 - duplicate concurrent manual submits are both idempotent
+ok 6 - manual-submit race produces one terminal state
+ok 7 - manual-submit race writes one audit event
+1
+1
+0
+0
+ok 8 - exactly one archive-or-start operation wins
+ok 9 - archive/start race cannot strand an active attempt
+1
+1
+0
+0
+ok 10 - reset/save race always closes the original attempt
+ok 11 - reset/save race never duplicates an answer
+ok 12 - reset/save race creates one retake grant
+1
+1
+0
+0
+ok 13 - duplicate concurrent regrades are idempotent
+ok 14 - regrade race stores one correction history row
+ok 15 - regrade race leaves the deterministic corrected score
+OK
+OK
+1..15

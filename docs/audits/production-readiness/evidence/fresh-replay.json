@@ -1,0 +1,123 @@
+{
+  "memoryGiB": 2,
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.166",
+  "date": "2026-11-10T09:03:41.7275340+02:00",
+  "tests": [
+    {
+      "file": "authorization.sql",
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "file": "bulk_question_import_concurrency.sql",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "file": "bulk_question_import.sql",
+      "passed": 24,
+      "failed": 0
+    },
+    {
+      "file": "dashboard_summaries.sql",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "duplicate_feature_settings.sql",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "exam_administration_concurrency.sql",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "exam_administration.sql",
+      "passed": 71,
+      "failed": 0
+    },
+    {
+      "file": "exam_lifecycle_ux.sql",
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "feature_enhancements.sql",
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "file": "integrity_concurrency.sql",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "file": "integrity_fixed_policy.sql",
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "file": "integrity.sql",
+      "passed": 44,
+      "failed": 0
+    },
+    {
+      "file": "permanent_exam_delete.sql",
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "file": "rls.sql",
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "state_machine.sql",
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "file": "student_expansion.sql",
+      "passed": 47,
+      "failed": 0
+    },
+    {
+      "file": "superadmin_user_management.sql",
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "file": "user_import_audit.sql",
+      "passed": 6,
+      "failed": 0
+    }
+  ],
+  "cpus": 2,
+  "migrations": [
+    "202609260001_initial_schema.sql",
+    "202609260002_harden_state_machine.sql",
+    "202609280001_bulk_question_import.sql",
+    "202609280002_exam_administration.sql",
+    "202609280003_attempt_administration.sql",
+    "202609280004_add_superadmin_role.sql",
+    "202609280005_superadmin_user_management.sql",
+    "202609290001_exam_lifecycle_ux.sql",
+    "202609290002_bulk_user_import.sql",
+    "202609290003_permanent_exam_delete.sql",
+    "202611010001_assignments_access_and_admin_cleanup.sql",
+    "202611060001_preserve_duplicated_exam_settings.sql",
+    "202611060002_exam_integrity.sql",
+    "202611060003_integrity_operations.sql",
+    "202611060004_integrity_session_recovery.sql",
+    "202611060005_integrity_section_scope.sql",
+    "202611060006_integrity_policy_read.sql",
+    "202611060007_integrity_fixed_policy_no_fullscreen.sql",
+    "202611060008_editable_integrity_policy.sql",
+    "202611070001_student_access_and_question_delivery.sql",
+    "202611070002_registration_and_delivery_guards.sql",
+    "202611070003_atomic_exam_drafts.sql",
+    "202611100001_student_dashboard_summaries.sql"
+  ]
+}

@@ -1,15 +1,41 @@
-import Link from "next/link";
-import { ArrowRight, CalendarClock, CheckCircle2 } from "lucide-react";
-import { formatAppDateTime } from "@/lib/date-time";
-import { getExamAvailability } from "@/lib/exam-state";
+import { StudentAssessments } from "@/components/student-assessments";
 import { createClient } from "@/lib/supabase/server";
-import type { ExamSummary } from "@/lib/types";
-
-type ExamWithAttempts = ExamSummary & { exam_attempts: { id: string; generation: number; status: string; raw_score: number | null; total_questions: number | null }[] };
 
 export default async function StudentDashboard() {
-  const supabase = await createClient();
-  const { data } = await supabase.from("exams").select("*,exam_attempts(id,generation,status,raw_score,total_questions)").in("status", ["published", "closed"]).order("scheduled_start_at", { ascending: false });
-  const exams = (data ?? []) as ExamWithAttempts[];
-  return <div><p className="eyebrow">Student dashboard</p><h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Your exams</h1><p className="mt-2 text-black/55">Open exams and current attempt generations appear here.</p><div className="mt-8 grid gap-5 lg:grid-cols-2">{exams.map((exam) => { const attempt = [...exam.exam_attempts].sort((left, right) => right.generation - left.generation)[0]; const availability = getExamAvailability(exam.scheduled_start_at, exam.scheduled_end_at); return <article className="card p-6" key={exam.id}><div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold uppercase tracking-wider text-brand">{attempt?.status === "completed" ? "Completed" : attempt?.status === "expired" ? "Attempt closed" : availability.replace("_", " ")}</span><h2 className="mt-2 text-xl font-bold">{exam.title}</h2></div>{attempt?.status === "completed" && <CheckCircle2 className="text-brand" />}</div><p className="mt-3 line-clamp-2 text-sm leading-6 text-black/55">{exam.description || "Timed SAT-style mock examination."}</p><p className="mt-5 flex items-center gap-2 text-sm text-black/45"><CalendarClock size={16} />{formatAppDateTime(exam.scheduled_start_at)}</p><Link className="btn-secondary mt-5 w-full" href={`/student/exams/${exam.id}`}>{attempt?.status === "in_progress" ? "Continue exam" : attempt ? "View attempt status" : "View exam"}<ArrowRight size={17} /></Link></article>; })}{exams.length === 0 && <div className="card col-span-full p-12 text-center text-black/45">No exams have been published yet.</div>}</div></div>;
+  const db = await createClient();
+  const { data, error } = await db
+    .from("exams")
+    .select("id,title,description,status,scheduled_start_at,scheduled_end_at")
+    .in("status", ["published", "closed"])
+    .order("scheduled_start_at", { ascending: false });
+  if (error) throw new Error("Your assessments could not be loaded.");
+
+  const ids = (data ?? []).map((exam) => exam.id);
+  const summaries = ids.length
+    ? await db.rpc("student_dashboard_attempt_summaries", { target_exams: ids })
+    : { data: [], error: null };
+  if (summaries.error)
+    throw new Error("Your assessment progress could not be loaded.");
+
+  const byExam = new Map(
+    ((summaries.data ?? []) as { exam_id: string; id: string; status: string }[]).map(
+      (row) => [row.exam_id, { id: row.id, status: row.status }],
+    ),
+  );
+  const exams = (data ?? []).map((exam) => ({
+    ...exam,
+    attempt: byExam.get(exam.id) ?? null,
+  }));
+
+  return (
+    <div>
+      <p className="eyebrow">Your learning workspace</p>
+      <h1 className="mt-2 font-bold">Ready for your next step?</h1>
+      <p className="mt-2 text-sm text-black/60">
+        Find your assigned assessments, pick up where you left off, and check
+        released results.
+      </p>
+      <StudentAssessments exams={exams} now={new Date().getTime()} />
+    </div>
+  );
 }

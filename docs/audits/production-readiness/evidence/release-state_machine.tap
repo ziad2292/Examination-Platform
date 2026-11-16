@@ -1,0 +1,26 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..22
+ok 1 - empty exam cannot publish
+ok 2 - empty module cannot publish
+ok 3 - question without key cannot publish
+ok 4 - valid exam publishes
+20000000-0000-0000-0000-000000000003
+ok 5 - student starts exam
+ok 6 - duplicate start creates one attempt
+ok 7 - duplicate start is idempotent
+ok 8 - student cannot skip a section
+ok 9 - first section starts
+ok 10 - duplicate section start creates one row
+ok 11 - duplicate section start is idempotent
+ok 12 - cross-section answer is rejected
+ok 13 - negative revisions are rejected
+ok 14 - valid answer saves
+ok 15 - stale answer is safely ignored
+ok 16 - newest revision wins
+ok 17 - first section submits
+ok 18 - submitted answers are immutable
+ok 19 - active exam cannot be archived
+20000000-0000-0000-0000-000000000003
+ok 20 - next section starts after submission
+ok 21 - final section completes exam
+ok 22 - grading is deterministic and counts unanswered questions

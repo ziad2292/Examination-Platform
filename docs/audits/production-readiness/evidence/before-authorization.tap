@@ -1,0 +1,29 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..22
+20000000-0000-0000-0000-000000000001
+ok 1 - student sees only their fixture attempt
+ok 2 - student cannot read another attempt
+ok 3 - student sees only their fixture answer
+ok 4 - student cannot read another answer
+ok 5 - student cannot read answer keys
+ok 6 - student can read questions only after owning an attempt
+ok 7 - student cannot modify another answer
+ok 8 - student cannot start another attempt section
+ok 9 - student cannot delete attempts
+ok 10 - student cannot create exams
+
+ok 11 - anonymous user cannot read exams
+ok 12 - anonymous user cannot read sections
+ok 13 - anonymous user cannot read questions
+ok 14 - anonymous user cannot read attempts
+ok 15 - anonymous user cannot execute transition RPCs
+10000000-0000-0000-0000-000000000001
+ok 16 - owning teacher can read exam attempts
+ok 17 - owning teacher can read responses
+ok 18 - owning teacher can read answer keys
+ok 19 - teacher cannot answer for a student
+20000000-0000-0000-0000-000000000002
+ok 20 - student B sees their own fixture attempt
+ok 21 - student B cannot read student A attempt
+20000000-0000-0000-0000-000000000005
+ok 22 - student without an attempt cannot retrieve exam questions

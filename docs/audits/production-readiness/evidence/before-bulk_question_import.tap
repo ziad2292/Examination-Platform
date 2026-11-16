@@ -1,0 +1,33 @@
+NOTICE:  extension "pgtap" already exists, skipping
+1..24
+ok 1 - import batches are persisted
+ok 2 - import items are auditable
+ok 3 - atomic bulk RPC exists
+10000000-0000-0000-0000-000000000001
+ok 4 - 30-image import succeeds
+ok 5 - exactly 30 batch items exist
+ok 6 - exactly 30 protected keys exist
+ok 7 - orders append contiguously after existing questions
+ok 8 - batch audit record is completed
+ok 9 - completed batch retry succeeds idempotently
+ok 10 - retry creates no duplicates
+10000000-0000-0000-0000-000000000001
+ok 11 - a separate batch appends safely
+ok 12 - separate batch receives deterministic unique order
+ok 13 - missing correct answer rejects the entire batch
+ok 14 - missing-answer batch commits zero questions
+ok 15 - missing/invalid Storage object rejects the batch
+ok 16 - empty batch is rejected
+20000000-0000-0000-0000-000000000001
+ok 17 - student cannot execute a bulk import
+ok 18 - student cannot inspect teacher import batches through RLS
+20000000-0000-0000-0000-000000000005
+ok 19 - another teacher cannot import into this module
+10000000-0000-0000-0000-000000000001
+ok 20 - mid-transaction insert failure is surfaced
+ok 21 - failed transaction leaves zero batch items
+10000000-0000-0000-0000-000000000001
+ok 22 - attempt makes exam immutable
+ok 23 - immutable rejection leaves questions unchanged
+10000000-0000-0000-0000-000000000001
+ok 24 - archived exam rejects imports

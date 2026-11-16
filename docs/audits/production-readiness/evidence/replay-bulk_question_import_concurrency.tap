@@ -1,0 +1,29 @@
+NOTICE:  extension "pgtap" already exists, skipping
+NOTICE:  extension "dblink" already exists, skipping
+1..6
+OK
+OK
+SET
+SET
+10000000-0000-0000-0000-000000000001
+10000000-0000-0000-0000-000000000001
+1
+1
+ok 1 - first identical concurrent request succeeds
+ok 2 - second identical concurrent request returns the same result
+ok 3 - identical concurrent requests create one logical question
+OK
+OK
+OK
+OK
+SET
+SET
+10000000-0000-0000-0000-000000000001
+10000000-0000-0000-0000-000000000001
+1
+1
+ok 4 - first independent concurrent batch succeeds
+ok 5 - second independent concurrent batch succeeds
+ok 6 - independent concurrent batches have unique contiguous order
+OK
+OK

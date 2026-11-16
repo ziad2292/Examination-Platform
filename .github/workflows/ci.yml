@@ -67,3 +67,27 @@ jobs:
       - name: Stop local Supabase
         if: always()
         run: supabase stop --no-backup
+
+  browser:
+    name: Browser regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Start disposable local Supabase
+        run: supabase start
+      - name: Build and test local production preview
+        run: node scripts/audit/ci-e2e.mjs
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup

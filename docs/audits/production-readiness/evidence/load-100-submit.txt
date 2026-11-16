@@ -1,0 +1,17 @@
+pgbench (17.6)
+transaction type: /tmp/audit-workload.sql
+scaling factor: 1
+query mode: simple
+number of clients: 100
+number of threads: 4
+maximum number of tries: 1
+number of transactions per client: 1
+number of transactions actually processed: 100/100
+number of failed transactions: 0 (0.000%)
+latency average = 1474.534 ms
+initial connection time = 92.093 ms
+tps = 67.818036 (without initial connection time)
+statement latencies in milliseconds and failures:
+        40.631           0  select set_config('request.jwt.claim.sub',md5('audit-load-student-'||:client_id)::uuid::text,false);
+        99.113           0  set role authenticated;
+      1097.153           0  select public.submit_section((select id from public.section_attempts where exam_attempt_id=(select id from public.exam_attempts

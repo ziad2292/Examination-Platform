@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-10",
+  "environment": "local Windows desktop, Docker Supabase, production Next preview",
+  "baseline": {"unit": 62, "databaseAssertions": 374, "edgeE2E": 22},
+  "after": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "unitAndApi": 78,
+    "databaseAssertions": 374,
+    "edgeE2E": 27,
+    "webkitE2E": 27,
+    "axeSampledRoutes": 10,
+    "axeFinalViolations": 0,
+    "productionDependencyAdvisories": 0,
+    "allDependencyModerateAdvisories": 8
+  },
+  "supplemental": {
+    "freshMigrationsReplayed": 22,
+    "freshReplayDatabaseAssertions": 374,
+    "cleanNpmCi": "passed",
+    "databaseStudentCohorts": [50, 100, 200],
+    "databasePhaseTransactions": 8050,
+    "databaseTransactionFailures": 0,
+    "verifiedCompletedAttempts": 350,
+    "saveP99MsAt200Students": 9685.765,
+    "databaseCpuLimit": 2,
+    "databaseMemoryGiBLimit": 2,
+    "disposableContainerRemoved": true,
+    "browserCi": "authored and locally syntax-checked; hosted run not executed",
+    "finalUnitTests": 78,
+    "portableBrowserConfigSmokeTests": 4
+  },
+  "blocked": {"firefox": "browser launch spawn UNKNOWN before page execution"},
+  "notExecuted": ["deployment-equivalent HTTP/Realtime student load", "sustained soak", "production recovery drill", "production configuration inspection", "real-device INP", "manual assistive technology audit", "hosted browser CI run"],
+  "scopeNotes": [
+    "Edge full suite passed before the final teacher definition-list/loading markup follow-up; WebKit full suite and axe passed afterward.",
+    "The initial database suite used schema clones. A later isolated run replayed all 22 application migrations against managed Auth/Storage schema prerequisites and passed 374 assertions.",
+    "WebKit initial signup test failed before hydration readiness was made explicit; targeted retry and complete rerun passed.",
+    "No production changes, database schema changes, grading changes, timing changes or submission semantics changes were made."
+  ]
+}

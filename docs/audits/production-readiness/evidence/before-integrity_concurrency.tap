@@ -1,0 +1,19 @@
+NOTICE:  extension "pgtap" already exists, skipping
+NOTICE:  extension "dblink" already exists, skipping
+1..6
+OK
+OK
+SET
+SET
+20000000-0000-0000-0000-000000000001
+20000000-0000-0000-0000-000000000001
+1
+1
+ok 1 - first concurrent ingestion crosses the fixed threshold
+ok 2 - concurrent replay returns the same count
+ok 3 - concurrent ingestion writes one immutable event
+ok 4 - concurrent threshold crossing creates one review cycle
+ok 5 - concurrent aggregate is atomic
+ok 6 - concurrent threshold never submits attempt
+OK
+OK

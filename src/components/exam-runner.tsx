@@ -13,7 +13,9 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { saveAnswer, submitSection } from "@/app/actions/attempts";
-import { CalculatorLink } from "@/components/calculator-link";
+import { EmbeddedCalculatorPanel } from "@/components/embedded-calculator-panel";
+import { IntegrityModuleLifecycle, useExamIntegrity } from "@/components/exam-integrity-provider";
+import { isCalculatorOrEditable } from "@/lib/integrity";
 import {
   acknowledgePendingAnswer,
   enqueuePendingAnswer,
@@ -34,12 +36,18 @@ interface ExamRunnerProps {
   sectionTitle: string;
   questions: StudentQuestion[];
   initialAnswers: SavedAnswer[];
+  allowCalculator: boolean;
 }
 
 const options: Option[] = ["A", "B", "C", "D"];
 
 function readPendingAnswers(storageKey: string): PendingAnswerQueue {
-  return parsePendingAnswers(localStorage.getItem(storageKey));
+  try {
+    return parsePendingAnswers(localStorage.getItem(storageKey));
+  } catch {
+    // Storage can be blocked independently of network access. Still save to the server.
+    return {};
+  }
 }
 
 function writePendingAnswers(
@@ -67,8 +75,12 @@ export function ExamRunner({
   sectionTitle,
   questions,
   initialAnswers,
+  allowCalculator,
 }: ExamRunnerProps) {
   const router = useRouter();
+  const integrity=useExamIntegrity();
+  const suspendIntegrity=integrity?.suspend;
+  const resumeIntegrity=integrity?.setModule;
   const [index, setIndex] = useState(0);
   const [seconds, setSeconds] = useState(() => remainingSeconds(expiresAt));
   const [status, setStatus] = useState<SaveStatus>("saved");
@@ -104,9 +116,18 @@ export function ExamRunner({
   const finish = useCallback(async () => {
     if (submitting.current) return;
 
+    suspendIntegrity?.();
     submitting.current = true;
     setIsSubmitting(true);
-    const result = await submitSection(sectionAttemptId);
+    let result;
+    try {
+      result = await submitSection(sectionAttemptId);
+    } catch {
+      submitting.current = false;
+      if (remainingSeconds(expiresAt)>0) resumeIntegrity?.(sectionAttemptId);
+      if (mounted.current) { setIsSubmitting(false); setStatus("offline"); }
+      return;
+    }
 
     if (!mounted.current) return;
 
@@ -116,9 +137,10 @@ export function ExamRunner({
     }
 
     submitting.current = false;
+    if (remainingSeconds(expiresAt)>0) resumeIntegrity?.(sectionAttemptId);
     setIsSubmitting(false);
     setStatus("offline");
-  }, [attemptId, router, sectionAttemptId]);
+  }, [attemptId, router, sectionAttemptId, suspendIntegrity, resumeIntegrity, expiresAt]);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -213,7 +235,7 @@ export function ExamRunner({
 
   useEffect(() => {
     const handleKeyboardAnswer = (event: KeyboardEvent) => {
-      if (!["1", "2", "3", "4"].includes(event.key)) return;
+      if (isCalculatorOrEditable(event.target) || !["1", "2", "3", "4"].includes(event.key)) return;
       updateAnswer({ selected_option: options[Number(event.key) - 1] });
     };
 
@@ -230,16 +252,15 @@ export function ExamRunner({
   );
 
   return (
-    <div className="min-h-[calc(100vh-8rem)]">
+    <div className="min-h-[calc(100vh-8rem)]"><IntegrityModuleLifecycle sectionAttemptId={sectionAttemptId}/>
       <header className="card flex flex-wrap items-center justify-between gap-4 p-4">
         <div>
           <p className="text-xs font-bold uppercase text-black/40">{examTitle}</p>
           <h1 className="font-bold">{sectionTitle}</h1>
         </div>
-        <div className="flex items-center gap-2"><CalculatorLink /><div
+        <div className="flex items-center gap-2">{allowCalculator && <EmbeddedCalculatorPanel sectionAttemptId={sectionAttemptId} />}<div
             className={`rounded-xl px-4 py-2 font-mono text-xl font-bold tabular-nums ${seconds < 300 ? "bg-red-50 text-red-700" : "bg-[#17211b] text-white"}`}
             aria-label={`${seconds} seconds remaining`}
-            aria-live="polite"
             role="timer"
           >{formatDuration(seconds)}</div></div>
       </header>
@@ -297,7 +318,7 @@ export function ExamRunner({
                   key={letter}
                 >
                   <input
-                    className="mt-1 accent-[#1d5c45]"
+                    className="mt-1 accent-brand"
                     type="radio"
                     name={`answer-${question.id}`}
                     value={letter}

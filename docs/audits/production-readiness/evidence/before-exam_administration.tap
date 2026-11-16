@@ -1,0 +1,85 @@
+NOTICE:  extension "pgtap" already exists, skipping
+10000000-0000-0000-0000-000000000001
+ok 1 - valid exam passes full publish validation
+ok 2 - publish summary counts modules
+ok 3 - valid draft metadata edit succeeds
+ok 4 - draft title is updated
+ok 5 - invalid schedule is rejected server-side
+ok 6 - valid exam publishes through audited RPC
+20000000-0000-0000-0000-000000000005
+ok 7 - non-owning teacher cannot edit exam metadata
+20000000-0000-0000-0000-000000000001
+ok 8 - student starts administration fixture
+ok 9 - student starts first section
+10000000-0000-0000-0000-000000000001
+ok 10 - descriptive metadata remains editable after attempts exist
+ok 11 - safe post-attempt metadata changed
+ok 12 - normal metadata edit cannot bypass post-attempt schedule policy
+ok 13 - opening time cannot move after attempts exist
+ok 14 - closing time can be extended after attempts exist
+ok 15 - rescheduling does not recalculate an active section expiry
+ok 16 - archive rejects active attempts
+ok 17 - teacher can manually submit an active section
+ok 18 - duplicate manual section submit is idempotent
+ok 19 - manual section submit produces one audit event
+ok 20 - active attempt reset succeeds
+ok 21 - reset preserves old attempt as terminal history
+ok 22 - reset creates one open retake grant
+ok 23 - duplicate reset request is idempotent
+ok 24 - duplicate reset produces one audit event
+20000000-0000-0000-0000-000000000005
+ok 25 - non-owning teacher cannot reset an attempt
+20000000-0000-0000-0000-000000000001
+ok 26 - authorized retake starts
+ok 27 - retake creates a new generation
+ok 28 - historical attempt remains intact
+ok 29 - old attempt records its successor
+ok 30 - retake section starts
+ok 31 - retake answer saves
+10000000-0000-0000-0000-000000000001
+ok 32 - teacher can manually submit whole attempt
+ok 33 - duplicate whole-attempt submit is idempotent
+ok 34 - manual submit locks and grades the full exam deterministically
+ok 35 - duplicate attempt submit produces one audit event
+ok 36 - explicit answer-key correction succeeds
+ok 37 - corrected key is stored
+ok 38 - terminal attempt is regraded from source answers
+ok 39 - correction preserves old key and affected-attempt count
+ok 40 - duplicate regrade request is deterministic
+ok 41 - answer-key correction has one audit event
+ok 42 - terminal attempt can receive a retake grant
+ok 43 - duplicate retake authorization is idempotent
+ok 44 - only one open retake grant exists
+ok 45 - exam without active attempts archives
+ok 46 - archived status is stored
+ok 47 - archived exam can be deliberately restored
+ok 48 - exam with attempts restores as closed
+ok 49 - closed exam reopens only through audited reschedule
+ok 50 - reopen returns exam to published
+ok 51 - duplication job begins idempotently
+10000000-0000-0000-0000-000000000001
+ok 52 - full exam duplication completes atomically
+ok 53 - duplicate is a new editable draft with full structure and no attempts
+ok 54 - answer keys are copied securely
+ok 55 - duplicate uses new question identities
+10000000-0000-0000-0000-000000000001
+ok 56 - editable question image replacement succeeds
+ok 57 - database points at replacement image
+ok 58 - old image is queued for post-commit cleanup
+ok 59 - database conflict preserves the current image
+ok 60 - Storage failure leaves database reference unchanged
+10000000-0000-0000-0000-000000000001
+ok 61 - historical image replacement is rejected
+ok 62 - untouched draft can be permanently deleted
+ok 63 - hard delete removes the draft
+10000000-0000-0000-0000-000000000001
+ok 64 - hard delete preserves attempts and results
+ok 65 - empty exam fails publish validation
+ok 66 - past schedule is reported
+ok 67 - empty module is reported
+ok 68 - missing key is reported
+ok 69 - missing Storage object is reported
+10000000-0000-0000-0000-000000000001
+ok 70 - live status count reflects no active attempt after administration
+ok 71 - important lifecycle operations are auditable
+1..71

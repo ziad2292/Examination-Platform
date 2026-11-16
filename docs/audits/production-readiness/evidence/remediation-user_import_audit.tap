@@ -1,0 +1,10 @@
+NOTICE:  extension "pgtap" already exists, skipping
+ok 1 - import journals never have a password column
+ok 2 - import batch records when it was performed
+90000000-0000-0000-0000-000000000001
+ok 3 - Super Admin can read import audit batches
+ok 4 - Super Admin can read per-row outcomes
+10000000-0000-0000-0000-000000000001
+ok 5 - teacher cannot read Super Admin import audit batches
+ok 6 - teacher cannot read import row outcomes
+1..6

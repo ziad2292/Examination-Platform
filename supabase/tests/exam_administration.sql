@@ -8,6 +8,9 @@ update public.profiles set role='teacher' where id='20000000-0000-0000-0000-0000
 
 insert into public.exams(id,title,description,status,scheduled_start_at,scheduled_end_at,created_by)
 values('b0000000-0000-0000-0000-000000000001','Administration fixture','Original','draft',now()-interval '1 hour',now()+interval '2 hours','10000000-0000-0000-0000-000000000001');
+update public.exams set show_results_to_students=true where id='b0000000-0000-0000-0000-000000000001';
+insert into public.exam_student_assignments(exam_id,student_id,assigned_by)
+values('b0000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001');
 insert into public.exam_sections(id,exam_id,title,section_type,section_order,duration_seconds) values
   ('b1000000-0000-0000-0000-000000000001','b0000000-0000-0000-0000-000000000001','Reading','module',1,600),
   ('b1000000-0000-0000-0000-000000000002','b0000000-0000-0000-0000-000000000001','Break','break',2,300),

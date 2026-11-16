@@ -1,0 +1,212 @@
+{
+  "timestamp": "2026-11-09T18:29:20.997Z",
+  "node": "v22.17.1",
+  "cpus": 32,
+  "memoryBytes": 34029125632,
+  "routes": [
+    {
+      "role": null,
+      "route": "/",
+      "ttfbMs": 130.90000009536743,
+      "loadMs": 211.5,
+      "lcp": 264,
+      "cls": 0,
+      "scriptBytes": 139271,
+      "scriptCount": 6,
+      "overflow": false,
+      "robots": null
+    },
+    {
+      "role": null,
+      "route": "/login",
+      "ttfbMs": 11.299999713897705,
+      "loadMs": 33.09999990463257,
+      "lcp": 48,
+      "cls": 0,
+      "scriptBytes": 142931,
+      "scriptCount": 7,
+      "overflow": false,
+      "robots": null
+    },
+    {
+      "role": "teacher",
+      "route": "/teacher",
+      "ttfbMs": 18.5,
+      "loadMs": 115.2999997138977,
+      "lcp": 404,
+      "cls": 0,
+      "scriptBytes": 144739,
+      "scriptCount": 8,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "teacher",
+      "route": "/teacher/exams/30000000-0000-0000-0000-000000000001/monitor",
+      "ttfbMs": 15.399999618530273,
+      "loadMs": 81.19999980926514,
+      "lcp": 384,
+      "cls": 0,
+      "scriptBytes": 214744,
+      "scriptCount": 10,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "student1",
+      "route": "/student",
+      "ttfbMs": 16.5,
+      "loadMs": 49.40000009536743,
+      "lcp": 80,
+      "cls": 0,
+      "scriptBytes": 145136,
+      "scriptCount": 9,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "student1",
+      "route": "/student/profile",
+      "ttfbMs": 12.199999809265137,
+      "loadMs": 28.09999990463257,
+      "lcp": 44,
+      "cls": 0,
+      "scriptBytes": 143287,
+      "scriptCount": 8,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "admin",
+      "route": "/admin",
+      "ttfbMs": 14.700000286102295,
+      "loadMs": 45.700000286102295,
+      "lcp": 52,
+      "cls": 0,
+      "scriptBytes": 150365,
+      "scriptCount": 10,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/create",
+      "ttfbMs": 12.900000095367432,
+      "loadMs": 38.80000019073486,
+      "lcp": 44,
+      "cls": 0,
+      "scriptBytes": 150364,
+      "scriptCount": 10,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/accounts",
+      "ttfbMs": 12.199999809265137,
+      "loadMs": 37.799999713897705,
+      "lcp": 348,
+      "cls": 0,
+      "scriptBytes": 150364,
+      "scriptCount": 10,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/students",
+      "ttfbMs": 13,
+      "loadMs": 32.30000019073486,
+      "lcp": 48,
+      "cls": 0,
+      "scriptBytes": 150364,
+      "scriptCount": 10,
+      "overflow": false,
+      "robots": "noindex, nofollow"
+    }
+  ],
+  "http": [
+    {
+      "route": "/",
+      "requests": 20,
+      "errors": 0,
+      "p50": 8.67599999999993,
+      "p95": 13.240000000000009,
+      "p99": 27.67899999999986
+    },
+    {
+      "route": "/login",
+      "requests": 20,
+      "errors": 0,
+      "p50": 7.527999999999793,
+      "p95": 8.652100000000246,
+      "p99": 10.624700000000303
+    },
+    {
+      "route": "/teacher",
+      "requests": 20,
+      "errors": 0,
+      "p50": 45.464999999999236,
+      "p95": 50.497299999999996,
+      "p99": 52.3796999999995
+    },
+    {
+      "route": "/teacher/exams/30000000-0000-0000-0000-000000000001/monitor",
+      "requests": 20,
+      "errors": 0,
+      "p50": 49.85940000000028,
+      "p95": 63.28279999999995,
+      "p99": 66.67159999999967
+    },
+    {
+      "route": "/student",
+      "requests": 20,
+      "errors": 0,
+      "p50": 18.566500000000815,
+      "p95": 21.934500000001208,
+      "p99": 36.51260000000002
+    },
+    {
+      "route": "/student/profile",
+      "requests": 20,
+      "errors": 0,
+      "p50": 18.649199999999837,
+      "p95": 26.23160000000098,
+      "p99": 26.485200000000987
+    },
+    {
+      "route": "/admin",
+      "requests": 20,
+      "errors": 0,
+      "p50": 27.401299999999537,
+      "p95": 44.28889999999956,
+      "p99": 68.79880000000048
+    },
+    {
+      "route": "/admin/create",
+      "requests": 20,
+      "errors": 0,
+      "p50": 25.319799999999304,
+      "p95": 42.73710000000028,
+      "p99": 60.9421999999995
+    },
+    {
+      "route": "/admin/accounts",
+      "requests": 20,
+      "errors": 0,
+      "p50": 29.77139999999963,
+      "p95": 34.62620000000061,
+      "p99": 37.43260000000009
+    },
+    {
+      "route": "/admin/students",
+      "requests": 20,
+      "errors": 0,
+      "p50": 28.133300000001327,
+      "p95": 34.785400000000664,
+      "p99": 35.294300000001385
+    }
+  ],
+  "errors": [],
+  "staticBytes": 1550102
+}

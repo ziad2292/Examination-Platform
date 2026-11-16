@@ -1,0 +1,18 @@
+NOTICE:  extension "pgtap" already exists, skipping
+20000000-0000-0000-0000-000000000005
+ok 1 - a non-owner cannot delete an exam
+10000000-0000-0000-0000-000000000001
+ok 2 - a published exam cannot be deleted
+ok 3 - a closed exam with an active attempt cannot be deleted
+ok 4 - a closed exam with historical results can be permanently deleted
+ok 5 - exam is removed
+ok 6 - attempts are removed
+ok 7 - answers are removed
+ok 8 - grading results are removed
+ok 9 - answer-key corrections are removed
+ok 10 - question import history is removed
+ok 11 - question image is queued for post-commit Storage cleanup
+ok 12 - a retained deletion tombstone records the actor and impact
+ok 13 - unrelated exam results remain untouched
+ok 14 - unrelated Storage objects remain untouched
+1..14
