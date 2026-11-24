@@ -12,7 +12,7 @@ import {
   CloudOff,
   LoaderCircle,
 } from "lucide-react";
-import { saveAnswer, submitSection } from "@/app/actions/attempts";
+import { expireSectionIfDue, saveAnswer, submitSection } from "@/app/actions/attempts";
 import { EmbeddedCalculatorPanel } from "@/components/embedded-calculator-panel";
 import { IntegrityModuleLifecycle, useExamIntegrity } from "@/components/exam-integrity-provider";
 import { isCalculatorOrEditable } from "@/lib/integrity";
@@ -32,6 +32,7 @@ interface ExamRunnerProps {
   attemptId: string;
   sectionAttemptId: string;
   expiresAt: string;
+  serverNow: string;
   examTitle: string;
   sectionTitle: string;
   questions: StudentQuestion[];
@@ -71,6 +72,7 @@ export function ExamRunner({
   attemptId,
   sectionAttemptId,
   expiresAt,
+  serverNow,
   examTitle,
   sectionTitle,
   questions,
@@ -82,7 +84,7 @@ export function ExamRunner({
   const suspendIntegrity=integrity?.suspend;
   const resumeIntegrity=integrity?.setModule;
   const [index, setIndex] = useState(0);
-  const [seconds, setSeconds] = useState(() => remainingSeconds(expiresAt));
+  const [seconds, setSeconds] = useState(() => remainingSeconds(expiresAt, new Date(serverNow)));
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answers, setAnswers] = useState<Record<string, SavedAnswer>>(() =>
@@ -93,6 +95,9 @@ export function ExamRunner({
   );
   const mounted = useRef(false);
   const submitting = useRef(false);
+  const checkingExpiry = useRef(false);
+  const nextExpiryCheck = useRef(0);
+  const serverClock = useRef<{ epoch: number; started: number } | null>(null);
   const storageKey = `summit-pending-${sectionAttemptId}`;
   const question = questions[index];
   const answer = useMemo(
@@ -143,17 +148,28 @@ export function ExamRunner({
   }, [attemptId, router, sectionAttemptId, suspendIntegrity, resumeIntegrity, expiresAt]);
 
   useEffect(() => {
+    serverClock.current = { epoch: Date.parse(serverNow), started: performance.now() };
     const updateTimer = () => {
-      const timeLeft = remainingSeconds(expiresAt);
+      const clock = serverClock.current;
+      if (!clock) return;
+      const timeLeft = remainingSeconds(expiresAt, new Date(clock.epoch + performance.now() - clock.started));
       setSeconds(timeLeft);
-
-      if (timeLeft === 0) void finish();
+      if (timeLeft !== 0 || checkingExpiry.current || submitting.current || performance.now() < nextExpiryCheck.current) return;
+      checkingExpiry.current = true;
+      void expireSectionIfDue(sectionAttemptId).then((result) => {
+        if (result.ok) {
+          if (result.closed) router.replace(`/student/attempts/${attemptId}`);
+          else serverClock.current = { epoch: Date.parse(result.serverNow), started: performance.now() };
+        } else nextExpiryCheck.current = performance.now() + 2000;
+      }).catch(() => {
+        nextExpiryCheck.current = performance.now() + 2000;
+      }).finally(() => { checkingExpiry.current = false; });
     };
 
     updateTimer();
     const timer = window.setInterval(updateTimer, 500);
     return () => window.clearInterval(timer);
-  }, [expiresAt, finish]);
+  }, [attemptId, expiresAt, router, sectionAttemptId, serverNow]);
 
   const persist = useCallback(
     async (nextAnswer: SavedAnswer) => {

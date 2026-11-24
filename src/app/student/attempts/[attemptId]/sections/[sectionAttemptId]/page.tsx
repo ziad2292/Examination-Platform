@@ -36,11 +36,13 @@ export default async function ActiveSection({
   const exam = Array.isArray(section.exams) ? section.exams[0] : section.exams;
 
   if (section.section_type === "break") {
+    const serverNow = new Date().toISOString();
     return (
       <BreakTimer
         attemptId={attemptId}
         sectionAttemptId={sectionAttemptId}
         expiresAt={sectionAttempt.expires_at}
+        serverNow={serverNow}
         title={section.title}
       />
     );
@@ -87,6 +89,7 @@ export default async function ActiveSection({
       attemptId={attemptId}
       sectionAttemptId={sectionAttemptId}
       expiresAt={sectionAttempt.expires_at}
+      serverNow={new Date().toISOString()}
       examTitle={exam.title}
       sectionTitle={section.title}
       questions={securedQuestions}
