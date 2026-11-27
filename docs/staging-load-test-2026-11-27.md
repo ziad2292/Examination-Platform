@@ -111,6 +111,47 @@ calls on exam routes, inspect database CPU and connection charts during a fresh
 run, and optimize or raise capacity based on those measurements. Repeat the
 hybrid test until all 100 students complete with acceptable response times.
 
+## After request-path optimization
+
+Commit `5967df7` switched Proxy and viewer identity checks to verified JWT
+claims while preserving the active-profile and role checks. Both staging and
+production expose asymmetric signing keys, so claims can be verified locally.
+The attempt-progress page now obtains its authorized summary and section list
+in one new RPC, `student_attempt_progress`, instead of two sequential database
+calls. The RPC masks hidden marks and returns no data for another student.
+Slow-call diagnostics were added without student identifiers or request data.
+Migration `202611270001_student_attempt_progress.sql` was applied to staging
+only, before the Preview build was deployed. Six transaction-rolled-back pgTAP
+checks passed on staging. Local lint, type check, 79 unit tests, and production
+build also passed.
+
+The same **five Edge browsers plus 95 HTTP sessions** then produced:
+
+| Phase | Before p95 / failures | After p95 / failures |
+| --- | ---: | ---: |
+| Attempt progress page | 30 s client limit / 41 failed | 1.8 s / 0 failed |
+| Start section | 30 s client limit / 81 failed | 1.6 s / 0 failed |
+| Section page | 22.5 s for 19 entrants / 0 failed | 4.6 s for 100 entrants / 0 failed |
+| Ten answer waves | Only 19 students reached them | All 100 completed; each wave p95 under 0.9 s |
+| Submit section | 19 completed | All 100 completed; 0.55 s p95 |
+
+There were zero test request failures and zero Vercel function HTTP 5xx
+responses. The staging PostgREST logs in this retest window had no pool or
+statement-timeout codes. The 100 disposable student accounts, teacher account,
+and exam were removed successfully.
+
+This is one successful staging run, not a production capacity guarantee. The
+staging database is in `eu-west-1` while production is in `eu-central-1`, and
+the projects have different PostgreSQL versions and may have different compute
+or data volumes. Five students used full browser UI; 95 used protocol clients.
+The test covered one ten-question module, not a full-duration exam with images,
+breaks, calculators, monitoring, and teacher dashboards. The remaining section
+page was 4.6 s at p95; slow-step logs most often pointed to profile reads and
+question reads. A production release requires applying the additive migration
+before deploying the app code, then observing a controlled production smoke
+test. Do not use this report as permission to run a load test against a live
+class.
+
 To distinguish Vercel queueing from Supabase saturation during a recurrence,
 capture Vercel function invocation durations and CPU, Supabase database CPU,
 connections, pool waits, slow queries and Auth errors over the same minute. The
