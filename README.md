@@ -55,6 +55,10 @@ npx supabase test db
 
 ## Environment variables
 
+### Staging Preview
+
+The `staging` Git branch is for disposable tests. Vercel creates a Preview deployment when this branch is pushed. Configure Preview variables using the names in `.env.staging.example`. Use values from Supabase project `ranrlqfsihteuwxhisek` only. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are public Config variables; `SUPABASE_SERVICE_ROLE_KEY` is a server-only Secret variable. Do not change the Production variables, commit keys, or run load tests until the deployed Preview is verified against staging. Environment-variable changes require a new Preview deployment. `NEXT_PUBLIC_APP_URL` is not currently read by the app and does not need a Preview override.
+
 | Variable | Scope | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server | Supabase project URL |
