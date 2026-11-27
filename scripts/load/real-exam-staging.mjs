@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { randomUUID } from "node:crypto";
+import { chromium } from "@playwright/test";
 
 // Disposable staging-only scenario. Never point this at production.
 const stagingRef = "ranrlqfsihteuwxhisek";
@@ -10,12 +11,14 @@ const serviceKey = process.env.STAGING_SERVICE_ROLE_KEY;
 const anonKey = process.env.STAGING_ANON_KEY;
 const bypass = process.env.STAGING_VERCEL_BYPASS;
 const useSectionAction = process.env.LOAD_USE_SECTION_ACTION === "1";
+const browserCount = Number(process.env.LOAD_BROWSER_STUDENTS ?? 0);
 const studentsCount = Number(process.argv[2] ?? 100);
 const loginIntervalMs = Number(process.env.LOAD_LOGIN_INTERVAL_MS ?? 2700);
 const answerIntervalMs = Number(process.env.LOAD_ANSWER_INTERVAL_MS ?? 8000);
 const questionsCount = 10;
 if (!serviceKey || !anonKey || !bypass) throw new Error("Staging credentials must be supplied in process environment.");
 if (!Number.isInteger(studentsCount) || studentsCount < 1 || studentsCount > 100) throw new Error("Student count must be 1..100.");
+if (!Number.isInteger(browserCount) || browserCount < 0 || browserCount > studentsCount || browserCount > 10) throw new Error("Browser student count must be 0..10.");
 if (!Number.isInteger(loginIntervalMs) || loginIntervalMs < 0 || !Number.isInteger(answerIntervalMs) || answerIntervalMs < 0) throw new Error("Invalid intervals.");
 
 const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -24,6 +27,7 @@ const password = `Load-${randomUUID()}!Aa1`;
 const createdUsers = [];
 const results = [];
 let examId;
+let browser;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const must = async request => {
   const { data, error } = await request;
@@ -38,7 +42,10 @@ const measure = async (phase, task) => {
     results.push({ phase, ms: Math.round(performance.now() - start), ok: true });
     return value;
   } catch (error) {
-    results.push({ phase, ms: Math.round(performance.now() - start), ok: false, error: error?.code ?? error?.message ?? String(error) });
+    const label = error?.name === "TimeoutError" || error?.code === 23
+      ? "client_timeout_30s"
+      : String(error?.code ?? error?.message ?? error).split("\n")[0];
+    results.push({ phase, ms: Math.round(performance.now() - start), ok: false, error: label });
     throw error;
   }
 };
@@ -100,7 +107,7 @@ const wave = async (phase, students, task) => {
   summary(phase);
 };
 
-console.log(JSON.stringify({ runId, students: studentsCount, target: "staging", loginIntervalMs, answerIntervalMs }));
+console.log(JSON.stringify({ runId, students: studentsCount, browserStudents: browserCount, target: "staging", loginIntervalMs, answerIntervalMs }));
 try {
   const teacher = await createUser("teacher", 0);
   await must(admin.from("profiles").upsert({ id: teacher.id, email: teacher.email, full_name: "Disposable Load Teacher", role: "teacher", is_active: true }));
@@ -138,37 +145,83 @@ try {
     if (loginIntervalMs) await pause(loginIntervalMs);
   }
   summary("sign_in");
+  if (browserCount) {
+    browser = await chromium.launch({ channel: "msedge", headless: true });
+    for (const student of loggedIn.slice(0, browserCount)) {
+      const context = await browser.newContext();
+      await context.addCookies(student.cookie().split("; ").map(part => {
+        const split = part.indexOf("=");
+        return { name: part.slice(0, split), value: part.slice(split + 1), url: appUrl };
+      }));
+      const browserPage = await context.newPage();
+      await browserPage.route(`${appUrl}/**`, route => route.continue({ headers: {
+        ...route.request().headers(), "x-vercel-protection-bypass": bypass,
+      } }));
+      student.browserPage = browserPage;
+    }
+  }
   console.log(JSON.stringify({ phase: "exam_live", students: loggedIn.length, useSectionAction }));
-  await wave("student_home_page", loggedIn, student => page("student_home_page", student, "/student"));
+  await wave("student_home_page", loggedIn, student => student.browserPage
+    ? measure("student_home_page", async () => {
+      await student.browserPage.goto(`${appUrl}/student`, { waitUntil: "domcontentloaded", timeout: 30000 });
+      if (student.browserPage.url().includes("/login")) throw new Error("Browser session redirected to login");
+    })
+    : page("student_home_page", student, "/student"));
   await wave("start_exam", loggedIn, async student => {
     const response = await measure("start_exam", () => student.client.rpc("start_exam", { target_exam: examId }));
     student.attemptId = response.data.id;
   });
   const active = loggedIn.filter(student => student.attemptId);
   await wave("attempt_progress_page", active, async student => {
+    if (student.browserPage) {
+      return measure("attempt_progress_page", async () => {
+        await student.browserPage.goto(`${appUrl}/student/attempts/${student.attemptId}`, { waitUntil: "domcontentloaded", timeout: 30000 });
+        await student.browserPage.getByRole("button", { name: "Begin module" }).waitFor({ timeout: 30000 });
+      });
+    }
     const html = await page("attempt_progress_page", student, `/student/attempts/${student.attemptId}`);
     student.sectionActionId = html.match(/name="\$ACTION_ID_([a-f0-9]+)"/)?.[1];
   });
   await wave("start_section", active, async student => {
+    if (student.browserPage) return measure("start_section", async () => {
+      await student.browserPage.getByRole("button", { name: "Begin module" }).click();
+      await student.browserPage.waitForURL(/\/sections\/[0-9a-f-]+/, { timeout: 30000 });
+      student.sectionAttemptId = student.browserPage.url().match(/\/sections\/([0-9a-f-]+)/)?.[1];
+      if (!student.sectionAttemptId) throw new Error("Browser did not enter section");
+    });
     if (useSectionAction) return startSectionAction(student, sectionId);
     const response = await measure("start_section", () => student.client.rpc("start_section", { target_attempt: student.attemptId, target_section: sectionId }));
     student.sectionAttemptId = response.data.id;
   });
   const running = active.filter(student => student.sectionAttemptId);
-  await wave("section_page", running, student => page("section_page", student, `/student/attempts/${student.attemptId}/sections/${student.sectionAttemptId}`));
+  await wave("section_page", running, student => student.browserPage
+    ? measure("section_page", () => student.browserPage.getByText("Question 1 of 10").waitFor({ timeout: 30000 }))
+    : page("section_page", student, `/student/attempts/${student.attemptId}/sections/${student.sectionAttemptId}`));
   for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
-    await wave(`answer_${questionIndex + 1}`, running, student => measure(`answer_${questionIndex + 1}`, () => student.client.rpc("save_answer", {
+    await wave(`answer_${questionIndex + 1}`, running, student => student.browserPage
+      ? measure(`answer_${questionIndex + 1}`, async () => {
+        await student.browserPage.locator('fieldset input[type="radio"][value="A"]').check();
+        await student.browserPage.getByText("Saved", { exact: true }).waitFor({ timeout: 30000 });
+        if (questionIndex < questions.length - 1) await student.browserPage.getByRole("button", { name: "Next" }).click();
+      })
+      : measure(`answer_${questionIndex + 1}`, () => student.client.rpc("save_answer", {
       target_section_attempt: student.sectionAttemptId, target_question: questions[questionIndex].id,
       new_option: "A", is_marked: false, revision: 1,
     })));
     if (questionIndex < questions.length - 1 && answerIntervalMs) await pause(answerIntervalMs);
   }
-  await wave("submit_section", running, student => measure("submit_section", () => student.client.rpc("submit_section", {
-    target_section_attempt: student.sectionAttemptId,
-  })));
+  await wave("submit_section", running, student => student.browserPage
+    ? measure("submit_section", async () => {
+      await student.browserPage.getByRole("button", { name: "Submit module" }).click();
+      await student.browserPage.waitForURL(url => !url.pathname.includes("/sections/"), { timeout: 30000 });
+    })
+    : measure("submit_section", () => student.client.rpc("submit_section", {
+      target_section_attempt: student.sectionAttemptId,
+    })));
   console.log(JSON.stringify({ phase: "complete", students: running.length, failures: results.filter(row => !row.ok).length }));
   if (results.some(row => !row.ok) || running.length !== studentsCount) process.exitCode = 1;
 } finally {
+  if (browser) await browser.close();
   // The content lock permits deletion only after the disposable attempts are gone.
   const attemptDelete = examId ? await admin.from("exam_attempts").delete().eq("exam_id", examId) : { error: null };
   const examDelete = examId && !attemptDelete.error ? await admin.from("exams").delete().eq("id", examId) : { error: null };

@@ -22,6 +22,12 @@ teacher live monitoring. Answer saves and section submission called the same
 database RPCs as the application, directly through Supabase rather than through
 the browser Server Actions. Network traffic came from one test machine.
 
+A subsequent hybrid run added five real headless Edge browser journeys alongside
+95 HTTP traffic sessions. The browser students entered the module and selected
+answers through the actual UI; the HTTP students followed the existing traffic
+script. All 100 sessions still originated from this one machine. This is not a
+100-browser, distributed, full-duration class rehearsal.
+
 ## Results
 
 All 100 students signed in successfully in both full runs. Each run completed
@@ -67,6 +73,44 @@ The earlier production logs also showed a separate grading failure for blank
 answers (`answer_results.is_correct` rejecting NULL). This fixture answered all
 ten questions, so that defect was not exercised or fixed by this load test.
 
+## Hybrid run: 5 browsers and 95 HTTP sessions
+
+The hybrid run **failed** the 100-student acceptance target. All 100 accounts
+signed in and started an exam. At the attempt-progress page, 41 of 100 requests
+failed against a 30-second client limit. Subsequent section starts had 81
+failures, including downstream failures from pages that never returned the form.
+Only 19 students reached the section and completed ten answers and a submission.
+The test generated 122 reported phase failures in total; this is not 122 unique
+students or 122 independent root failures. The disposable exam and all 101 test
+accounts were deleted successfully.
+
+| Phase | Requests | Failed | p95 elapsed |
+| --- | ---: | ---: | ---: |
+| Sign in, paced | 100 | 0 | 296 ms |
+| Student home page | 100 | 0 | 5.2 s |
+| Start exam RPC | 100 | 0 | 1.1 s |
+| Attempt progress page | 100 | 41 | 30.0 s client limit |
+| Start section | 100 | 81 | 30.0 s client limit |
+| Section page (students who entered) | 19 | 0 | 22.5 s |
+
+Staging Vercel function logs during this run showed the attempt-progress route
+at **52 seconds p95 wall time** with only **0.8 seconds p95 CPU time**. The
+section POST route showed about 14.6 seconds p95 wall time. Vercel logged no
+HTTP 5xx responses for the measured load-test functions, but a client timeout
+can happen while a function continues waiting. Supabase PostgREST logs in the
+same window contained four `PGRST003` pool-acquisition timeouts and one SQL
+statement timeout (`57014`). `PGRST003` is a concrete sign that the PostgREST
+database connection pool became unavailable for some requests. It does not,
+alone, identify whether query duration, request fan-out, or compute pressure
+filled the pool.
+
+**Decision:** This staging configuration did not reliably serve 100 concurrent
+students in the hybrid test. Do not use the earlier successful HTTP-only runs
+as a production capacity approval. Investigate the repeated Auth/profile/API
+calls on exam routes, inspect database CPU and connection charts during a fresh
+run, and optimize or raise capacity based on those measurements. Repeat the
+hybrid test until all 100 students complete with acceptable response times.
+
 To distinguish Vercel queueing from Supabase saturation during a recurrence,
 capture Vercel function invocation durations and CPU, Supabase database CPU,
 connections, pool waits, slow queries and Auth errors over the same minute. The
@@ -79,6 +123,9 @@ production incident.
 Preview URL. Provide the staging service-role key, staging anon key, and a
 temporary Vercel automation bypass token as environment variables. Set
 `LOAD_USE_SECTION_ACTION=1` to exercise the Vercel section form. The script
+also accepts `LOAD_BROWSER_STUDENTS=5` to run five Edge browser journeys with
+the remaining students as HTTP sessions. The generator machine must have Edge
+installed. The script
 automatically removes its disposable exam and accounts. If interrupted, run
 `scripts/load/cleanup-staging-run.mjs <runId>` with the staging service-role key.
 Check the cleanup output before another run. Never replace the hard-coded target
