@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { BreakTimer } from "@/components/break-timer";
 import { ExamRunner } from "@/components/exam-runner";
 import { createClient } from "@/lib/supabase/server";
+import { timedExamStep } from "@/lib/exam-performance";
 import type { SavedAnswer, StudentQuestion } from "@/lib/types";
 
 export default async function ActiveSection({
@@ -11,21 +12,21 @@ export default async function ActiveSection({
 }) {
   const { attemptId, sectionAttemptId } = await params;
   const supabase = await createClient();
-  const { data: sectionAttempt } = await supabase
+  const { data: sectionAttempt } = await timedExamStep("section", "section-attempt", () => supabase
     .from("section_attempts")
     .select(
       "id,exam_attempt_id,started_at,expires_at,status,exam_attempts(question_sequence),exam_sections(id,title,section_type,allow_calculator,exam_id,exams(title))",
     )
     .eq("id", sectionAttemptId)
     .eq("exam_attempt_id", attemptId)
-    .single();
+    .single());
 
   if (!sectionAttempt) notFound();
   if (sectionAttempt.status !== "in_progress") redirect(`/student/attempts/${attemptId}`);
 
-  const { data: reconciledStatus } = await supabase.rpc("reconcile_section", {
+  const { data: reconciledStatus } = await timedExamStep("section", "reconcile", () => supabase.rpc("reconcile_section", {
     target_section_attempt: sectionAttemptId,
-  });
+  }));
   if (reconciledStatus !== "in_progress") {
     redirect(`/student/attempts/${attemptId}`);
   }
@@ -47,17 +48,17 @@ export default async function ActiveSection({
   }
 
   const [{ data: questionRows }, { data: answers }] = await Promise.all([
-    supabase
+    timedExamStep("section", "questions", () => supabase
       .from("questions")
       .select(
         "id,section_id,question_order,image_path,optional_text,option_a,option_b,option_c,option_d",
       )
       .eq("section_id", section.id)
-      .order("question_order"),
-    supabase
+      .order("question_order")),
+    timedExamStep("section", "answers", () => supabase
       .from("answers")
       .select("question_id,selected_option,marked_for_review,client_revision,updated_at")
-      .eq("section_attempt_id", sectionAttemptId),
+      .eq("section_attempt_id", sectionAttemptId)),
   ]);
 
   const questions = (questionRows ?? []) as StudentQuestion[];
@@ -72,7 +73,7 @@ export default async function ActiveSection({
     .map((question) => question.image_path)
     .filter((path): path is string => Boolean(path));
   const signedImages = imagePaths.length
-    ? await supabase.storage.from("question-images").createSignedUrls(imagePaths, 21_600)
+    ? await timedExamStep("section", "signed-images", () => supabase.storage.from("question-images").createSignedUrls(imagePaths, 21_600))
     : { data: [] };
   const imageUrls = new Map(
     (signedImages.data ?? []).map((image) => [image.path, image.signedUrl]),
