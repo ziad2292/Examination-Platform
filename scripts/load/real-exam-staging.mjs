@@ -10,14 +10,17 @@ const appUrl = "https://examination-platform-git-staging-zaab2.vercel.app";
 const serviceKey = process.env.STAGING_SERVICE_ROLE_KEY;
 const anonKey = process.env.STAGING_ANON_KEY;
 const bypass = process.env.STAGING_VERCEL_BYPASS;
+const bypassCookie = process.env.STAGING_VERCEL_BYPASS_COOKIE;
 const useSectionAction = process.env.LOAD_USE_SECTION_ACTION === "1";
+const includeBlankAnswer = process.env.LOAD_INCLUDE_BLANK_ANSWER === "1";
 const browserCount = Number(process.env.LOAD_BROWSER_STUDENTS ?? 0);
 const studentsCount = Number(process.argv[2] ?? 100);
 const loginIntervalMs = Number(process.env.LOAD_LOGIN_INTERVAL_MS ?? 2700);
 const answerIntervalMs = Number(process.env.LOAD_ANSWER_INTERVAL_MS ?? 8000);
 const questionsCount = 10;
-if (!serviceKey || !anonKey || !bypass) throw new Error("Staging credentials must be supplied in process environment.");
-if (!Number.isInteger(studentsCount) || studentsCount < 1 || studentsCount > 100) throw new Error("Student count must be 1..100.");
+if (!serviceKey || !anonKey || (!bypass && !bypassCookie)) throw new Error("Staging credentials and a Preview bypass must be supplied in process environment.");
+if (bypassCookie && !bypassCookie.startsWith("_vercel_jwt=")) throw new Error("Invalid Preview bypass cookie format.");
+if (!Number.isInteger(studentsCount) || studentsCount < 1 || studentsCount > 200) throw new Error("Student count must be 1..200.");
 if (!Number.isInteger(browserCount) || browserCount < 0 || browserCount > studentsCount || browserCount > 10) throw new Error("Browser student count must be 0..10.");
 if (!Number.isInteger(loginIntervalMs) || loginIntervalMs < 0 || !Number.isInteger(answerIntervalMs) || answerIntervalMs < 0) throw new Error("Invalid intervals.");
 
@@ -34,6 +37,11 @@ const must = async request => {
   if (error) throw error;
   return data;
 };
+const previewHeaders = student => ({
+  ...(bypass ? { "x-vercel-protection-bypass": bypass } : {}),
+  cookie: [student.cookie(), bypassCookie].filter(Boolean).join("; "),
+  "user-agent": "Assessly-staging-load-test",
+});
 const measure = async (phase, task) => {
   const start = performance.now();
   try {
@@ -54,7 +62,7 @@ const summary = phase => {
   const times = rows.map(row => row.ms).sort((a, b) => a - b);
   const percentile = p => times[Math.min(times.length - 1, Math.ceil(times.length * p) - 1)] ?? null;
   console.log(JSON.stringify({ phase, requests: rows.length, failed: rows.filter(row => !row.ok).length,
-    p50_ms: percentile(.5), p95_ms: percentile(.95), max_ms: times.at(-1) ?? null,
+    p50_ms: percentile(.5), p95_ms: percentile(.95), p99_ms: percentile(.99), max_ms: times.at(-1) ?? null,
     errors: [...new Set(rows.filter(row => !row.ok).map(row => row.error))] }));
 };
 const createUser = async (role, index) => {
@@ -62,7 +70,7 @@ const createUser = async (role, index) => {
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) throw error;
   createdUsers.push(data.user.id);
-  return { id: data.user.id, email };
+  return { id: data.user.id, email, index };
 };
 const login = async student => {
   const jar = new Map();
@@ -77,7 +85,7 @@ const login = async student => {
 };
 const page = async (phase, student, path) => measure(phase, async () => {
   const response = await fetch(`${appUrl}${path}`, {
-    headers: { "x-vercel-protection-bypass": bypass, cookie: student.cookie(), "user-agent": "Assessly-staging-load-test" },
+    headers: previewHeaders(student),
     redirect: "manual", signal: AbortSignal.timeout(30000),
   });
   const body = await response.text();
@@ -92,9 +100,9 @@ const startSectionAction = async (student, sectionId) => measure("start_section"
   form.set("sectionId", sectionId);
   const response = await fetch(`${appUrl}/student/attempts/${student.attemptId}`, {
     method: "POST", body: form, redirect: "manual", signal: AbortSignal.timeout(30000),
-    headers: { "x-vercel-protection-bypass": bypass, cookie: student.cookie(),
+    headers: { ...previewHeaders(student),
       origin: appUrl, referer: `${appUrl}/student/attempts/${student.attemptId}`,
-      "user-agent": "Assessly-staging-load-test" },
+    },
   });
   await response.arrayBuffer();
   const location = response.headers.get("location") ?? "";
@@ -107,7 +115,7 @@ const wave = async (phase, students, task) => {
   summary(phase);
 };
 
-console.log(JSON.stringify({ runId, students: studentsCount, browserStudents: browserCount, target: "staging", loginIntervalMs, answerIntervalMs }));
+console.log(JSON.stringify({ runId, students: studentsCount, browserStudents: browserCount, target: "staging", loginIntervalMs, answerIntervalMs, includeBlankAnswer }));
 try {
   const teacher = await createUser("teacher", 0);
   await must(admin.from("profiles").upsert({ id: teacher.id, email: teacher.email, full_name: "Disposable Load Teacher", role: "teacher", is_active: true }));
@@ -148,13 +156,17 @@ try {
   if (browserCount) {
     browser = await chromium.launch({ channel: "msedge", headless: true });
     for (const student of loggedIn.slice(0, browserCount)) {
-      const context = await browser.newContext();
+      const context = await browser.newContext({ userAgent: "Assessly-staging-load-test Browser" });
       await context.addCookies(student.cookie().split("; ").map(part => {
         const split = part.indexOf("=");
         return { name: part.slice(0, split), value: part.slice(split + 1), url: appUrl };
       }));
+      if (bypassCookie) {
+        const split = bypassCookie.indexOf("=");
+        await context.addCookies([{ name: bypassCookie.slice(0, split), value: bypassCookie.slice(split + 1), url: appUrl }]);
+      }
       const browserPage = await context.newPage();
-      await browserPage.route(`${appUrl}/**`, route => route.continue({ headers: {
+      if (bypass) await browserPage.route(`${appUrl}/**`, route => route.continue({ headers: {
         ...route.request().headers(), "x-vercel-protection-bypass": bypass,
       } }));
       student.browserPage = browserPage;
@@ -206,7 +218,9 @@ try {
       })
       : measure(`answer_${questionIndex + 1}`, () => student.client.rpc("save_answer", {
       target_section_attempt: student.sectionAttemptId, target_question: questions[questionIndex].id,
-      new_option: "A", is_marked: false, revision: 1,
+      new_option: includeBlankAnswer && student.index === studentsCount - 1 && questionIndex === questions.length - 1 ? null : "A",
+      is_marked: includeBlankAnswer && student.index === studentsCount - 1 && questionIndex === questions.length - 1,
+      revision: 1,
     })));
     if (questionIndex < questions.length - 1 && answerIntervalMs) await pause(answerIntervalMs);
   }
@@ -218,8 +232,18 @@ try {
     : measure("submit_section", () => student.client.rpc("submit_section", {
       target_section_attempt: student.sectionAttemptId,
     })));
-  console.log(JSON.stringify({ phase: "complete", students: running.length, failures: results.filter(row => !row.ok).length }));
-  if (results.some(row => !row.ok) || running.length !== studentsCount) process.exitCode = 1;
+  const completed = await must(admin.from("exam_attempts")
+    .select("id,student_id,status,raw_score,total_questions")
+    .eq("exam_id", examId));
+  const blankStudentId = includeBlankAnswer ? students[studentsCount - 1].id : null;
+  const correct = completed.filter(row => row.status === "completed"
+    && row.raw_score === (row.student_id === blankStudentId ? questionsCount - 1 : questionsCount)
+    && row.total_questions === questionsCount).length;
+  console.log(JSON.stringify({ phase: "complete", students: running.length,
+    persistedAttempts: completed.length, correctGrades: correct,
+    failures: results.filter(row => !row.ok).length }));
+  if (results.some(row => !row.ok) || running.length !== studentsCount
+    || completed.length !== studentsCount || correct !== studentsCount) process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
   // The content lock permits deletion only after the disposable attempts are gone.

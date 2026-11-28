@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(22);
+select plan(24);
 
 insert into public.exams(id,title,status,scheduled_start_at,scheduled_end_at,created_by)
 values('a0000000-0000-0000-0000-000000000001','State fixture','draft',now()-interval '1 hour',now()+interval '1 hour','10000000-0000-0000-0000-000000000001');
@@ -51,8 +51,10 @@ select throws_ok($$update public.exams set status='archived' where id='a0000000-
 set local role authenticated;
 select set_config('request.jwt.claim.sub','20000000-0000-0000-0000-000000000003',true);
 select lives_ok($$select public.start_section((select id from public.exam_attempts where exam_id='a0000000-0000-0000-0000-000000000001'),'a1000000-0000-0000-0000-000000000002')$$,'next section starts after submission');
+select lives_ok($$select public.save_answer((select id from public.section_attempts where section_id='a1000000-0000-0000-0000-000000000002'),'a2000000-0000-0000-0000-000000000003',null,true,1)$$,'blank marked answer persists');
 select lives_ok($$select public.submit_section((select id from public.section_attempts where section_id='a1000000-0000-0000-0000-000000000002'))$$,'final section completes exam');
 select results_eq($$select status::text,raw_score,total_questions from public.exam_attempts where exam_id='a0000000-0000-0000-0000-000000000001'$$,$$select 'completed'::text,1::integer,3::integer$$,'grading is deterministic and counts unanswered questions');
+select is((select is_correct from public.answer_results where answer_id=(select id from public.answers where question_id='a2000000-0000-0000-0000-000000000003')),false,'saved blank answer is graded incorrect');
 
 select * from finish();
 rollback;
